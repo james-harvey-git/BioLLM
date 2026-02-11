@@ -27,3 +27,12 @@ def test_unknown_key_rejected() -> None:
 
     with pytest.raises(ValidationError):
         validate_hydra_cfg(OmegaConf.create(as_dict))
+
+
+def test_rtx4070_preset_composes_and_validates() -> None:
+    conf_dir = Path(__file__).resolve().parents[2] / "conf"
+    with hydra.initialize_config_dir(version_base=None, config_dir=str(conf_dir)):
+        cfg = hydra.compose(config_name="config", overrides=["train=rtx4070", "device=cuda"])
+    validated = validate_hydra_cfg(cfg)
+    assert validated.train.batch_size == 24
+    assert validated.device == "cuda"

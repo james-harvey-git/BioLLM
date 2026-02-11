@@ -27,6 +27,24 @@ For an RTX 4070 (12GB), a good starting run is:
 
 ```bash
 uv run python -m biollm_cls.cli train \
+  device=cuda \
+  train=rtx4070 \
+  logging.wandb_project=biollm-cls
+```
+
+Mac development preset:
+
+```bash
+uv run python -m biollm_cls.cli train \
+  device=auto \
+  train=mac_dev \
+  logging.use_wandb=false
+```
+
+Manual override equivalent:
+
+```bash
+uv run python -m biollm_cls.cli train \
   train.batch_size=24 \
   replay.batch_size=128 \
   train.amp_enabled=true \
@@ -99,6 +117,16 @@ What is logged to W&B:
 - Periodic and final model checkpoints as model artifacts
 
 If `WANDB_API_KEY` is not set and mode is online, the run automatically falls back to offline mode.
+
+## Gaming PC handoff
+
+See `/Users/jamesharvey/Development/Personal-Code-Projects/BioLLM/RUN_ON_4070.md` for full setup and runbook.
+
+Quick CUDA sanity check:
+
+```bash
+uv run python scripts/check_cuda.py
+```
 
 ## Tests
 

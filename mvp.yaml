@@ -40,12 +40,12 @@ consolidation:
   min_sleep_steps: 25
   max_sleep_steps: 200
   pseudo_rehearsal: false
+  refresh:
+    kl_threshold: 0.05
+    reset_factor: 0.1
 ewc:
   lambda_: 100.0
   fisher_decay: 0.99
-refresh:
-  kl_threshold: 0.05
-  reset_factor: 0.1
 train:
   batch_size: 8
   max_steps: 1500
