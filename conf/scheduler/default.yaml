@@ -1,0 +1,4 @@
+saturation_weight: 0.4
+forgetting_weight: 0.4
+novelty_weight: 0.2
+pressure_threshold: 0.6

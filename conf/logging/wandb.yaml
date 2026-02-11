@@ -1,0 +1,20 @@
+use_wandb: true
+wandb_project: biollm-cls
+wandb_mode: ${oc.env:WANDB_MODE,offline}
+output_dir: outputs
+wandb_entity: ${oc.env:WANDB_ENTITY,null}
+wandb_run_name: ${oc.env:WANDB_RUN_NAME,null}
+wandb_group: null
+wandb_job_type: train
+wandb_tags: [cls, mvp]
+wandb_notes: null
+wandb_resume: null
+wandb_run_id: null
+wandb_api_key_env_var: WANDB_API_KEY
+wandb_watch_model: false
+wandb_watch_log_freq: 100
+checkpoint_interval: 200
+checkpoint_keep_last: 3
+upload_checkpoints: true
+upload_config_artifact: true
+upload_metadata_artifact: true

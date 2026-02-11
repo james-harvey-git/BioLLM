@@ -1,0 +1,15 @@
+provider: hf
+vocab_size: 2048
+hidden_size: 0
+num_layers: 0
+num_heads: 0
+seq_len: 128
+dropout: 0.0
+injection_layer: -1
+hf_model_name: gpt2
+hf_revision: null
+hf_trust_remote_code: false
+hf_torch_dtype: auto
+hf_attn_implementation: null
+hf_gradient_checkpointing: false
+hf_local_files_only: false

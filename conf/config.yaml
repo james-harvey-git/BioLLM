@@ -1,0 +1,17 @@
+defaults:
+  - model: tiny_transformer
+  - experts: default
+  - replay: default
+  - consolidation: default
+  - ewc: default
+  - scheduler: default
+  - train: default
+  - logging: wandb
+  - _self_
+
+seed: 42
+device: auto
+
+repro:
+  deterministic: true
+  save_config_snapshot: true

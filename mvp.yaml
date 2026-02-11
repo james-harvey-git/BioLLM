@@ -1,0 +1,86 @@
+seed: 42
+device: auto
+repro:
+  deterministic: true
+  save_config_snapshot: true
+model:
+  provider: tiny
+  vocab_size: 512
+  hidden_size: 256
+  num_layers: 6
+  num_heads: 8
+  seq_len: 128
+  dropout: 0.1
+  injection_layer: 4
+  hf_model_name: null
+  hf_revision: null
+  hf_trust_remote_code: false
+  hf_torch_dtype: auto
+  hf_attn_implementation: null
+  hf_gradient_checkpointing: false
+  hf_local_files_only: false
+experts:
+  num_experts: 32
+  expert_hidden: 128
+  top_k: 2
+  fast_lr: 0.001
+  reward_alpha: 0.5
+  routing_reg_weight: 0.01
+  utilization_bonus: 0.1
+  capacity_penalty: 0.1
+  saturation_threshold: 0.7
+replay:
+  capacity: 10000
+  batch_size: 64
+consolidation:
+  slow_lr: 0.000001
+  wake_base_lr_scale: 0.0
+  sleep_min_interval: 100
+  sleep_max_interval: 500
+  min_sleep_steps: 25
+  max_sleep_steps: 200
+  pseudo_rehearsal: false
+ewc:
+  lambda_: 100.0
+  fisher_decay: 0.99
+refresh:
+  kl_threshold: 0.05
+  reset_factor: 0.1
+train:
+  batch_size: 8
+  max_steps: 1500
+  eval_interval: 100
+  ablation_no_sleep: false
+  reward_from_correctness: true
+  amp_enabled: true
+  amp_dtype: fp16
+  allow_tf32: true
+  matmul_precision: high
+  compile_model: false
+  compile_mode: reduce-overhead
+scheduler:
+  saturation_weight: 0.4
+  forgetting_weight: 0.4
+  novelty_weight: 0.2
+  pressure_threshold: 0.6
+logging:
+  use_wandb: true
+  wandb_project: biollm-cls
+  wandb_mode: offline
+  output_dir: outputs
+  wandb_entity: null
+  wandb_run_name: null
+  wandb_group: null
+  wandb_job_type: train
+  wandb_tags: [cls, mvp]
+  wandb_notes: null
+  wandb_resume: null
+  wandb_run_id: null
+  wandb_api_key_env_var: WANDB_API_KEY
+  wandb_watch_model: false
+  wandb_watch_log_freq: 100
+  checkpoint_interval: 200
+  checkpoint_keep_last: 3
+  upload_checkpoints: true
+  upload_config_artifact: true
+  upload_metadata_artifact: true

@@ -1,0 +1,10 @@
+slow_lr: 0.000001
+wake_base_lr_scale: 0.0
+sleep_min_interval: 100
+sleep_max_interval: 500
+min_sleep_steps: 25
+max_sleep_steps: 200
+pseudo_rehearsal: false
+refresh:
+  kl_threshold: 0.05
+  reset_factor: 0.1

@@ -1,0 +1,15 @@
+provider: tiny
+vocab_size: 512
+hidden_size: 256
+num_layers: 6
+num_heads: 8
+seq_len: 128
+dropout: 0.1
+injection_layer: 4
+hf_model_name: null
+hf_revision: null
+hf_trust_remote_code: false
+hf_torch_dtype: auto
+hf_attn_implementation: null
+hf_gradient_checkpointing: false
+hf_local_files_only: false
