@@ -45,6 +45,7 @@ def test_instruction_benchmark_preset_composes_and_validates() -> None:
     validated = validate_hydra_cfg(cfg)
     assert validated.benchmark.name == "instruction"
     assert validated.model.provider == "hf"
+    assert validated.benchmark.eval_local_path is None
 
 
 def test_qwen_0_5b_12gb_train_preset_composes_and_validates() -> None:
@@ -55,3 +56,20 @@ def test_qwen_0_5b_12gb_train_preset_composes_and_validates() -> None:
     assert validated.train.batch_size == 2
     assert validated.train.amp_enabled is True
     assert validated.device == "cuda"
+
+
+def test_ni8_pilot_and_continual_preset_composes() -> None:
+    conf_dir = Path(__file__).resolve().parents[2] / "conf"
+    with hydra.initialize_config_dir(version_base=None, config_dir=str(conf_dir)):
+        cfg = hydra.compose(
+            config_name="config",
+            overrides=[
+                "benchmark=ni8_pilot",
+                "train=continual_pilot_4070",
+                "model=hf_causal_lm",
+            ],
+        )
+    validated = validate_hydra_cfg(cfg)
+    assert validated.benchmark.eval_local_path == "data/ni8/eval.jsonl"
+    assert validated.benchmark.task_selection_seed == 42
+    assert validated.train.ablation_disable_hippocampus is False

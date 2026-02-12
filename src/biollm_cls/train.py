@@ -13,10 +13,11 @@ from biollm_cls.consolidation.ewc import EWCState
 from biollm_cls.consolidation.refresh import ExpertRefresher
 from biollm_cls.consolidation.sleep import Consolidator
 from biollm_cls.control.scheduler import SleepPressureController, StepStats
+from biollm_cls.eval.continual_metrics import ContinualMetricsTracker
 from biollm_cls.logging import MetricsLogger
 from biollm_cls.memory.replay_buffer import Episode, ReservoirReplayBuffer
 from biollm_cls.models.factory import build_neocortex
-from biollm_cls.models.hippocampus import HippocampalMoE
+from biollm_cls.models.hippocampus import HippocampalMoE, RoutingInfo
 from biollm_cls.repro import save_run_metadata, set_seed
 
 
@@ -65,6 +66,16 @@ def _optimizer_has_fp16_params(optimizer: torch.optim.Optimizer) -> bool:
             if getattr(param, "dtype", None) == torch.float16:
                 return True
     return False
+
+
+def _neutral_routing(batch_size: int, top_k: int, num_experts: int, device: torch.device) -> RoutingInfo:
+    safe_topk = max(1, int(top_k))
+    safe_experts = max(1, int(num_experts))
+    row_idx = torch.arange(safe_topk, device=device, dtype=torch.long) % safe_experts
+    topk_indices = row_idx.unsqueeze(0).repeat(batch_size, 1)
+    topk_probs = torch.full((batch_size, safe_topk), 1.0 / safe_topk, device=device)
+    router_probs = torch.full((batch_size, safe_experts), 1.0 / safe_experts, device=device)
+    return RoutingInfo(topk_indices=topk_indices, topk_probs=topk_probs, router_probs=router_probs)
 
 
 def run_training(cfg: CLSConfig) -> dict[str, float]:
@@ -152,6 +163,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         min_sleep_steps=cfg.consolidation.min_sleep_steps,
         max_sleep_steps=cfg.consolidation.max_sleep_steps,
     )
+    cl_metrics = ContinualMetricsTracker()
 
     config_dict = asdict(cfg)
     config_dict["runtime"] = {
@@ -202,7 +214,13 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
             artifact_type="metadata",
         )
 
+    disable_hippocampus = bool(cfg.train.ablation_disable_hippocampus)
+    refresh_enabled = (not disable_hippocampus) and (cfg.consolidation.refresh.reset_factor < 1.0)
+
     used_experts: set[int] = set()
+    seen_tasks: set[int] = set()
+    previous_task_id: int | None = None
+
     best_old_loss = float("inf")
     old_loss = 0.0
     sleep_count = 0
@@ -211,7 +229,33 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
 
     try:
         for step in range(1, cfg.train.max_steps + 1):
+            scheduled_task = benchmark.current_task(step)
+            if previous_task_id is not None and scheduled_task != previous_task_id:
+                boundary_eval = benchmark.evaluate_task_set(model, device, sorted(seen_tasks))
+                boundary_metrics = cl_metrics.record_boundary(
+                    step=step - 1,
+                    completed_task_id=previous_task_id,
+                    task_results=boundary_eval,
+                )
+                boundary_payload = {
+                    "seen_acc_avg": float(boundary_metrics["seen_acc_avg"]),
+                    "seen_loss_avg": float(boundary_metrics["seen_loss_avg"]),
+                    "forgetting": float(boundary_metrics["forgetting"]),
+                    "bwt": float(boundary_metrics["bwt"]),
+                    "tasks_completed": float(boundary_metrics["tasks_completed"]),
+                    "boundary_index": float(boundary_metrics["boundary_index"]),
+                    "boundary_step": float(boundary_metrics["boundary_step"]),
+                }
+                for task_id, result in boundary_eval.items():
+                    boundary_payload[f"task_acc/{task_id}"] = float(result.token_acc)
+                    boundary_payload[f"task_loss/{task_id}"] = float(result.loss)
+                    boundary_payload[f"task_tokens/{task_id}"] = float(result.n_tokens)
+                logger.log(boundary_payload, step=step - 1)
+
             batch = benchmark.sample_batch(step, cfg.train.batch_size)
+            current_task = int(batch.task_id)
+            seen_tasks.add(current_task)
+
             input_ids = batch.input_ids.to(device)
             target_ids = batch.target_ids.to(device)
 
@@ -228,25 +272,44 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     with torch.no_grad():
                         hidden = model.forward_to_injection(input_ids)
 
-                delta, routing = hippocampus(hidden.detach() if not wake_base_enabled else hidden)
-                augmented_hidden = hidden + delta
-
-                fast_logits = hippocampus.predict_logits(augmented_hidden)
-                fast_ce = F.cross_entropy(
-                    fast_logits.view(-1, runtime_vocab_size),
-                    target_ids.view(-1),
-                    ignore_index=-100,
-                )
-                fast_loss = fast_ce + cfg.experts.routing_reg_weight * hippocampus.routing_regularizer()
+                if disable_hippocampus:
+                    delta = torch.zeros_like(hidden)
+                    routing = _neutral_routing(
+                        batch_size=hidden.shape[0],
+                        top_k=cfg.experts.top_k,
+                        num_experts=cfg.experts.num_experts,
+                        device=hidden.device,
+                    )
+                    augmented_hidden = hidden
+                    fast_logits = model.forward_from_injection(augmented_hidden.detach() if not wake_base_enabled else augmented_hidden)
+                    fast_ce = F.cross_entropy(
+                        fast_logits.view(-1, runtime_vocab_size),
+                        target_ids.view(-1),
+                        ignore_index=-100,
+                    )
+                    fast_loss = fast_ce
+                else:
+                    delta, routing = hippocampus(hidden.detach() if not wake_base_enabled else hidden)
+                    augmented_hidden = hidden + delta
+                    fast_logits = hippocampus.predict_logits(augmented_hidden)
+                    fast_ce = F.cross_entropy(
+                        fast_logits.view(-1, runtime_vocab_size),
+                        target_ids.view(-1),
+                        ignore_index=-100,
+                    )
+                    fast_loss = fast_ce + cfg.experts.routing_reg_weight * hippocampus.routing_regularizer()
 
             reward = 0.0
             if cfg.train.reward_from_correctness:
                 reward = benchmark.reward_from_correctness(fast_logits, target_ids)
             reward_mult = float(np.clip(1.0 + cfg.experts.reward_alpha * reward, 0.25, 2.0))
 
-            fast_optimizer.zero_grad(set_to_none=True)
-            _backward_step(fast_loss * reward_mult, fast_optimizer, fast_scaler)
-            hippocampus.update_capacity_estimates()
+            fast_update_applied = 0.0
+            if not disable_hippocampus:
+                fast_optimizer.zero_grad(set_to_none=True)
+                _backward_step(fast_loss * reward_mult, fast_optimizer, fast_scaler)
+                hippocampus.update_capacity_estimates()
+                fast_update_applied = 1.0
 
             if wake_base_enabled:
                 base_optimizer.zero_grad(set_to_none=True)
@@ -272,26 +335,32 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     ):
                         teacher_logits = model.forward_from_injection(augmented_hidden.detach())
 
-            episode = Episode(
-                input_ids=input_ids[0].detach().cpu(),
-                target_ids=target_ids[0].detach().cpu(),
-                reward=float(reward),
-                teacher_logits=_sanitize_logits(teacher_logits[0].detach().cpu(), clamp=30.0).to(torch.float16),
-                expert_ids=routing.topk_indices[0].detach().cpu(),
-                router_probs=routing.router_probs[0].detach().cpu(),
-                step_id=step,
-            )
-            replay.add(episode)
+            for row_idx in range(input_ids.shape[0]):
+                episode = Episode(
+                    input_ids=input_ids[row_idx].detach().cpu(),
+                    target_ids=target_ids[row_idx].detach().cpu(),
+                    reward=float(reward),
+                    teacher_logits=_sanitize_logits(teacher_logits[row_idx].detach().cpu(), clamp=30.0).to(torch.float16),
+                    expert_ids=routing.topk_indices[row_idx].detach().cpu(),
+                    router_probs=routing.router_probs[row_idx].detach().cpu(),
+                    step_id=step,
+                )
+                replay.add(episode)
 
-            selected = set(int(v) for v in routing.topk_indices.detach().cpu().view(-1).tolist())
-            novelty_rate = len([x for x in selected if x not in used_experts]) / max(1, len(selected))
-            used_experts.update(selected)
+            if disable_hippocampus:
+                novelty_rate = 0.0
+                saturation_ratio = 0.0
+                expert_util_entropy = 0.0
+            else:
+                selected = set(int(v) for v in routing.topk_indices.detach().cpu().view(-1).tolist())
+                novelty_rate = len([x for x in selected if x not in used_experts]) / max(1, len(selected))
+                used_experts.update(selected)
 
-            saturation_scores = hippocampus.capacity_scores().detach().cpu()
-            saturation_ratio = float((saturation_scores > cfg.experts.saturation_threshold).float().mean().item())
+                saturation_scores = hippocampus.capacity_scores().detach().cpu()
+                saturation_ratio = float((saturation_scores > cfg.experts.saturation_threshold).float().mean().item())
+                expert_util_entropy = float(hippocampus.utilization_entropy())
 
             if step % cfg.train.eval_interval == 0:
-                current_task = benchmark.current_task(step)
                 old_loss = benchmark.evaluate_old_loss(model, device, current_task=current_task)
                 best_old_loss = min(best_old_loss, old_loss)
             forgetting_signal = max(0.0, old_loss - best_old_loss) if best_old_loss < float("inf") else 0.0
@@ -314,11 +383,12 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
             if not cfg.train.ablation_no_sleep and scheduler.should_sleep(step):
                 sleep_steps = scheduler.recommended_sleep_steps()
                 sleep_metrics = consolidator.run_sleep_cycle(sleep_steps)
-                refresh_metrics = refresher.run_refresh(model, hippocampus, replay, device)
+                if refresh_enabled:
+                    refresh_metrics = refresher.run_refresh(model, hippocampus, replay, device)
+                    refresh_count_total += int(refresh_metrics["refresh_count"])
                 scheduler.mark_slept(step)
                 sleep_count += 1
                 sleep_base_updates += int(sleep_metrics["steps"])
-                refresh_count_total += int(refresh_metrics["refresh_count"])
 
             with torch.no_grad():
                 with torch.autocast(
@@ -337,24 +407,28 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 perf_metrics["cuda_mem_alloc_mb"] = float(torch.cuda.memory_allocated(device) / (1024 ** 2))
                 perf_metrics["cuda_mem_reserved_mb"] = float(torch.cuda.memory_reserved(device) / (1024 ** 2))
 
-            logger.log(
-                {
-                    "task_loss": float(fast_ce.item()),
-                    "old_task_loss": float(old_loss),
-                    "forgetting_index": float(forgetting_signal),
-                    "sleep_pressure": float(scheduler.current_pressure),
-                    "sleep_count": float(sleep_count),
-                    "sleep_steps": float(sleep_metrics["steps"]),
-                    "expert_util_entropy": float(hippocampus.utilization_entropy()),
-                    "refresh_count": float(refresh_metrics["refresh_count"]),
-                    "base_teacher_kl": float(base_teacher_kl),
-                    "distill_kl": float(sleep_metrics["distill_kl"]),
-                    "ewc_penalty": float(sleep_metrics["ewc_penalty"]),
-                    "replay_size": float(len(replay)),
-                    **perf_metrics,
-                },
-                step=step,
+            core_metrics = {
+                "task_loss": float(fast_ce.item()),
+                "old_task_loss": float(old_loss),
+                "forgetting_index": float(forgetting_signal),
+                "sleep_pressure": float(scheduler.current_pressure),
+                "sleep_count": float(sleep_count),
+                "sleep_steps": float(sleep_metrics["steps"]),
+                "expert_util_entropy": float(expert_util_entropy),
+                "refresh_count": float(refresh_metrics["refresh_count"]),
+                "base_teacher_kl": float(base_teacher_kl),
+                "distill_kl": float(sleep_metrics["distill_kl"]),
+                "ewc_penalty": float(sleep_metrics["ewc_penalty"]),
+                "replay_size": float(len(replay)),
+                "fast_update_applied": float(fast_update_applied),
+                **perf_metrics,
+            }
+            cl_metrics.observe_step_metrics(step, core_metrics)
+            core_metrics["non_finite_step_count"] = float(cl_metrics.non_finite_step_count)
+            core_metrics["first_non_finite_step"] = float(
+                cl_metrics.first_non_finite_step if cl_metrics.first_non_finite_step is not None else -1
             )
+            logger.log(core_metrics, step=step)
 
             if cfg.logging.checkpoint_interval > 0 and step % cfg.logging.checkpoint_interval == 0:
                 logger.save_checkpoint(
@@ -370,12 +444,44 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     },
                 )
 
+            previous_task_id = current_task
+
+        if previous_task_id is not None:
+            boundary_eval = benchmark.evaluate_task_set(model, device, sorted(seen_tasks))
+            boundary_metrics = cl_metrics.record_boundary(
+                step=cfg.train.max_steps,
+                completed_task_id=previous_task_id,
+                task_results=boundary_eval,
+            )
+            boundary_payload = {
+                "seen_acc_avg": float(boundary_metrics["seen_acc_avg"]),
+                "seen_loss_avg": float(boundary_metrics["seen_loss_avg"]),
+                "forgetting": float(boundary_metrics["forgetting"]),
+                "bwt": float(boundary_metrics["bwt"]),
+                "tasks_completed": float(boundary_metrics["tasks_completed"]),
+                "boundary_index": float(boundary_metrics["boundary_index"]),
+                "boundary_step": float(boundary_metrics["boundary_step"]),
+            }
+            for task_id, result in boundary_eval.items():
+                boundary_payload[f"task_acc/{task_id}"] = float(result.token_acc)
+                boundary_payload[f"task_loss/{task_id}"] = float(result.loss)
+                boundary_payload[f"task_tokens/{task_id}"] = float(result.n_tokens)
+            logger.log(boundary_payload, step=cfg.train.max_steps)
+
+        cl_summary = cl_metrics.summary()
         final_summary = {
             "sleep_count": float(sleep_count),
             "refresh_count_total": float(refresh_count_total),
             "base_updates_in_sleep": float(sleep_base_updates),
             "final_forgetting_index": float(max(0.0, old_loss - best_old_loss) if best_old_loss < float("inf") else 0.0),
             "final_old_task_loss": float(old_loss),
+            "final_seen_acc_avg": float(cl_summary["final_seen_acc_avg"]),
+            "final_forgetting": float(cl_summary["final_forgetting"]),
+            "final_bwt": float(cl_summary["final_bwt"]),
+            "seen_acc_auc": float(cl_summary["seen_acc_auc"]),
+            "tasks_completed": float(cl_summary["tasks_completed"]),
+            "non_finite_step_count": float(cl_summary["non_finite_step_count"]),
+            "first_non_finite_step": float(cl_summary["first_non_finite_step"]),
         }
         logger.save_checkpoint(
             step=cfg.train.max_steps,

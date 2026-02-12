@@ -1,11 +1,11 @@
-batch_size: 8
-max_steps: 1500
+batch_size: 2
+max_steps: 1600
 eval_interval: 100
 ablation_no_sleep: false
 ablation_disable_hippocampus: false
 reward_from_correctness: true
 amp_enabled: true
-amp_dtype: fp16
+amp_dtype: bf16
 allow_tf32: true
 matmul_precision: high
 compile_model: false

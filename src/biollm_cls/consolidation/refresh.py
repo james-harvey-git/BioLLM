@@ -50,6 +50,12 @@ class ExpertRefresher:
         replay_buffer: ReservoirReplayBuffer,
         device: torch.device,
     ) -> dict[str, float]:
+        if self.reset_factor >= 1.0:
+            return {
+                "refresh_count": 0.0,
+                "refresh_avg_kl": 0.0,
+            }
+
         refreshed = 0
         expert_kls: list[float] = []
 

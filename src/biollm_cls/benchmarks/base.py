@@ -15,10 +15,24 @@ class BenchmarkBatch:
     task_id: int
 
 
+@dataclass
+class TaskEvalResult:
+    loss: float
+    token_acc: float
+    n_tokens: int
+
+
 class ContinualBenchmark(Protocol):
     def current_task(self, step: int) -> int: ...
 
     def sample_batch(self, step: int, batch_size: int | None = None) -> BenchmarkBatch: ...
+
+    def evaluate_task_set(
+        self,
+        model: NeocortexAdapter,
+        device: torch.device,
+        task_ids: list[int],
+    ) -> dict[int, TaskEvalResult]: ...
 
     def evaluate_old_loss(self, model: NeocortexAdapter, device: torch.device, current_task: int) -> float: ...
 

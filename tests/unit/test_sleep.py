@@ -66,3 +66,58 @@ def test_sleep_cycle_handles_non_finite_teacher_logits() -> None:
     assert metrics["steps"] >= 0.0
     for key in ("distill_loss", "distill_kl", "ewc_penalty"):
         assert math.isfinite(metrics[key])
+
+
+def test_sleep_distillation_reduces_base_teacher_kl_on_replay_subset() -> None:
+    torch.manual_seed(12)
+    model, moe, replay, ewc, optimizer = _make_components()
+
+    for i in range(16):
+        input_ids = torch.randint(0, 32, (8,), dtype=torch.long)
+        target_ids = torch.randint(0, 32, (8,), dtype=torch.long)
+        with torch.no_grad():
+            hidden = model.forward_to_injection(input_ids.unsqueeze(0))
+            delta, routing = moe(hidden)
+            teacher_logits = model.forward_from_injection(hidden + delta)[0]
+        replay.add(
+            Episode(
+                input_ids=input_ids,
+                target_ids=target_ids,
+                reward=0.0,
+                teacher_logits=teacher_logits.detach().cpu(),
+                expert_ids=routing.topk_indices[0].detach().cpu(),
+                router_probs=routing.router_probs[0].detach().cpu(),
+                step_id=i,
+            )
+        )
+
+    def _mean_kl() -> float:
+        batch = replay.sample_uniform(8)
+        inputs = torch.stack([ep.input_ids for ep in batch], dim=0)
+        teacher_logits = torch.stack([ep.teacher_logits for ep in batch], dim=0)
+        with torch.no_grad():
+            base_logits = model.forward_base(inputs)
+            kl = torch.nn.functional.kl_div(
+                torch.log_softmax(base_logits, dim=-1),
+                torch.softmax(teacher_logits, dim=-1),
+                reduction="batchmean",
+            )
+        return float(kl.item())
+
+    before = _mean_kl()
+    consolidator = Consolidator(
+        base_model=model,
+        hippocampus=moe,
+        replay_buffer=replay,
+        ewc=ewc,
+        base_optimizer=optimizer,
+        device=torch.device("cpu"),
+        replay_batch_size=8,
+        amp_enabled=False,
+        grad_scaler=None,
+    )
+    metrics = consolidator.run_sleep_cycle(steps=20)
+    after = _mean_kl()
+
+    assert metrics["steps"] > 0
+    assert after <= before + 1e-6

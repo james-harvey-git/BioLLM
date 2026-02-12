@@ -56,9 +56,11 @@ class BenchmarkSchema(StrictModel):
     dataset_config: str | None = None
     dataset_split: str = "train"
     local_path: str | None = None
+    eval_local_path: str | None = None
     prompt_field: str = "instruction"
     response_field: str = "output"
     task_field: str | None = None
+    task_selection_seed: int = 42
     max_examples: int = 0
     min_examples_per_task: int = 32
     heldout_per_task: int = 32
@@ -107,6 +109,7 @@ class TrainSchema(StrictModel):
     max_steps: int
     eval_interval: int
     ablation_no_sleep: bool
+    ablation_disable_hippocampus: bool = False
     reward_from_correctness: bool
     amp_enabled: bool = True
     amp_dtype: str = "fp16"

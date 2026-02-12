@@ -2,6 +2,7 @@ batch_size: 24
 max_steps: 1500
 eval_interval: 100
 ablation_no_sleep: false
+ablation_disable_hippocampus: false
 reward_from_correctness: true
 amp_enabled: true
 amp_dtype: fp16

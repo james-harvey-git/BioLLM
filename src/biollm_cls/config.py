@@ -90,9 +90,11 @@ class BenchmarkConfig:
     dataset_config: str | None = None
     dataset_split: str = "train"
     local_path: str | None = None
+    eval_local_path: str | None = None
     prompt_field: str = "instruction"
     response_field: str = "output"
     task_field: str | None = None
+    task_selection_seed: int = 42
     max_examples: int = 0
     min_examples_per_task: int = 32
     heldout_per_task: int = 32
@@ -110,6 +112,7 @@ class TrainConfig:
     eval_interval: int
     ablation_no_sleep: bool
     reward_from_correctness: bool
+    ablation_disable_hippocampus: bool = False
     amp_enabled: bool = True
     amp_dtype: str = "fp16"
     allow_tf32: bool = True

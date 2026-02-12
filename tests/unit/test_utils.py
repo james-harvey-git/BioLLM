@@ -16,7 +16,12 @@ from biollm_cls.config import (
 )
 
 
-def make_test_config(output_dir: str, ablation_no_sleep: bool = False, max_steps: int = 260) -> CLSConfig:
+def make_test_config(
+    output_dir: str,
+    ablation_no_sleep: bool = False,
+    max_steps: int = 260,
+    ablation_disable_hippocampus: bool = False,
+) -> CLSConfig:
     return CLSConfig(
         seed=7,
         device="cpu",
@@ -71,6 +76,7 @@ def make_test_config(output_dir: str, ablation_no_sleep: bool = False, max_steps
             eval_interval=20,
             ablation_no_sleep=ablation_no_sleep,
             reward_from_correctness=True,
+            ablation_disable_hippocampus=ablation_disable_hippocampus,
         ),
         logging=LoggingConfig(
             use_wandb=False,

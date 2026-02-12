@@ -179,6 +179,51 @@ uv run python -m biollm_cls.cli train \
 
 `instructions.jsonl` should contain one JSON object per line with at least prompt/response fields.
 
+## Continual Learning Evaluation v1 (NI8 pilot)
+
+Build the deterministic 8-task Natural Instructions pack:
+
+```bash
+uv run python scripts/build_ni_8task_pack.py
+```
+
+This writes:
+
+- `data/ni8/train.jsonl`
+- `data/ni8/eval.jsonl`
+- `data/ni8/metadata.json`
+
+Run the 5-baseline continual suite (`full_cls`, `no_sleep`, `no_ewc`, `no_refresh`, `no_hippocampus`) across 3 seeds:
+
+```bash
+uv run python scripts/run_continual_eval_suite.py \
+  --entity=jublett-university-of-oxford \
+  --project=biollm-cls
+```
+
+Default suite settings:
+
+- Benchmark preset: `benchmark=ni8_pilot`
+- Train preset: `train=continual_pilot_4070`
+- Model: `Qwen/Qwen2.5-0.5B-Instruct` (`bf16`)
+- Seeds: `7 42 123`
+- Group: `cl-ni8-pilot-<timestamp>`
+
+Publish W&B dashboard visuals + local CSV reports for a completed suite group:
+
+```bash
+uv run python scripts/publish_continual_dashboard_wandb.py \
+  --entity=jublett-university-of-oxford \
+  --project=biollm-cls \
+  --group=cl-ni8-pilot-YYYYMMDD_HHMMSS
+```
+
+Local report outputs:
+
+- `outputs/eval/<group>/suite_summary.csv`
+- `outputs/eval/<group>/boundary_metrics.csv`
+- `outputs/eval/<group>/task_matrix.csv`
+
 ## Weights & Biases (online/offline, artifacts, checkpoints)
 
 The trainer always writes local logs to `metrics.jsonl`.  
