@@ -224,6 +224,62 @@ Local report outputs:
 - `outputs/eval/<group>/boundary_metrics.csv`
 - `outputs/eval/<group>/task_matrix.csv`
 
+### Continual Metrics Definitions (Task-Boundary Metrics)
+
+Implementation reference:
+- `src/biollm_cls/eval/continual_metrics.py`
+
+At each task boundary (task switch, plus final step), we evaluate all seen tasks and update two matrices:
+
+- `A[i][j]`: token accuracy on task `j` measured after completing boundary `i`
+- `L[i][j]`: token loss on task `j` measured after completing boundary `i`
+
+Conventions:
+
+- `i` is boundary index in task order (0-based)
+- `j` is task index among seen tasks
+- first boundary (`i=0`) has no prior tasks, so forgetting/BWT are defined as `0`
+
+Core metrics (computed exactly):
+
+- `seen_acc_avg_i = mean(A[i][j] for j <= i)`
+  - Average token accuracy over all tasks seen so far at boundary `i`.
+  - Higher is better.
+
+- `seen_loss_avg_i = mean(L[i][j] for j <= i)`
+  - Average token loss over all tasks seen so far at boundary `i`.
+  - Lower is better.
+
+- `forgetting_i = mean(max_{k <= i-1} A[k][j] - A[i][j] for j < i)`
+  - For each prior task `j`, measure drop from its best past accuracy to current accuracy, then average.
+  - Higher means more catastrophic forgetting. Lower is better.
+
+- `bwt_i = mean(A[i][j] - A[j][j] for j < i)`
+  - Backward transfer relative to each task’s own post-training boundary (`A[j][j]`).
+  - Positive: old tasks improved after later learning.
+  - Negative: old tasks degraded after later learning.
+
+Final summary metrics:
+
+- `final_seen_acc_avg`: `seen_acc_avg_i` at the last boundary
+- `final_forgetting`: `forgetting_i` at the last boundary
+- `final_bwt`: `bwt_i` at the last boundary
+
+Area-under-trajectory metric:
+
+- `seen_acc_auc`
+  - Trapezoidal AUC over boundary trajectory of `seen_acc_avg`, normalized by number of boundary intervals.
+  - Interpreted as average retention quality across the full continual stream (not just final checkpoint).
+  - Higher is better.
+
+Numerical health metrics:
+
+- `non_finite_step_count`
+  - Count of training steps where tracked scalar metrics contained non-finite values (`NaN`/`Inf`).
+
+- `first_non_finite_step`
+  - First step index with non-finite metrics, or `-1` if none observed.
+
 ## Weights & Biases (online/offline, artifacts, checkpoints)
 
 The trainer always writes local logs to `metrics.jsonl`.  
