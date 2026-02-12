@@ -115,6 +115,15 @@ Notes:
 Qwen 0.5B instruct starting point for a 12GB GPU:
 
 ```bash
+uv run python scripts/run_qwen_instruction_12gb.py \
+  --local-path=/absolute/path/to/instructions.jsonl \
+  --entity=jublett-university-of-oxford \
+  --project=biollm-cls
+```
+
+Equivalent raw override command:
+
+```bash
 uv run python -m biollm_cls.cli train \
   device=cuda \
   train=qwen_0_5b_12gb \

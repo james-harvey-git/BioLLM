@@ -82,6 +82,17 @@ For private/local data, use `benchmark.local_path=/absolute/path/to/file.jsonl`.
 
 ## 5c) Qwen 0.5B instruct preset for 12GB VRAM
 
+Simple launcher:
+
+```bash
+uv run python scripts/run_qwen_instruction_12gb.py \
+  --local-path=/absolute/path/to/instructions.jsonl \
+  --entity=jublett-university-of-oxford \
+  --project=biollm-cls
+```
+
+Equivalent raw override command:
+
 ```bash
 uv run python -m biollm_cls.cli train \
   device=cuda \
