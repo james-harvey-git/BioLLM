@@ -53,6 +53,16 @@ def _backward_step(
         optimizer.step()
 
 
+def _optimizer_has_fp16_params(optimizer: torch.optim.Optimizer) -> bool:
+    for group in optimizer.param_groups:
+        for param in group.get("params", []):
+            if param is None:
+                continue
+            if getattr(param, "dtype", None) == torch.float16:
+                return True
+    return False
+
+
 def run_training(cfg: CLSConfig) -> dict[str, float]:
     device = _resolve_device(cfg.device)
     set_seed(cfg.seed, cfg.repro.deterministic)
@@ -70,9 +80,6 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
 
     amp_dtype = _resolve_amp_dtype(cfg.train.amp_dtype)
     amp_enabled = bool(cfg.train.amp_enabled and device.type == "cuda")
-    use_grad_scaler = bool(amp_enabled and amp_dtype == torch.float16)
-    fast_scaler = torch.cuda.amp.GradScaler(enabled=use_grad_scaler) if use_grad_scaler else None
-    base_scaler = torch.cuda.amp.GradScaler(enabled=use_grad_scaler) if use_grad_scaler else None
 
     model = build_neocortex(cfg.model).to(device)
     runtime_vocab_size = int(min(cfg.model.vocab_size, model.vocab_size))
@@ -92,6 +99,14 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
 
     base_optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.consolidation.slow_lr)
     fast_optimizer = torch.optim.AdamW(hippocampus.parameters(), lr=cfg.experts.fast_lr)
+
+    # GradScaler cannot unscale FP16 gradients from FP16 parameters.
+    # HF models loaded with model.hf_torch_dtype=fp16 have FP16 params, so disable scaler there.
+    use_grad_scaler = bool(amp_enabled and amp_dtype == torch.float16)
+    use_base_scaler = bool(use_grad_scaler and not _optimizer_has_fp16_params(base_optimizer))
+    use_fast_scaler = bool(use_grad_scaler and not _optimizer_has_fp16_params(fast_optimizer))
+    fast_scaler = torch.cuda.amp.GradScaler(enabled=use_fast_scaler) if use_fast_scaler else None
+    base_scaler = torch.cuda.amp.GradScaler(enabled=use_base_scaler) if use_base_scaler else None
 
     replay = ReservoirReplayBuffer(cfg.replay.capacity)
     ewc = EWCState(cfg.ewc.lambda_, cfg.ewc.fisher_decay, device=device)
@@ -139,6 +154,8 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         "resolved_device": str(device),
         "amp_enabled": amp_enabled,
         "amp_dtype": cfg.train.amp_dtype,
+        "base_grad_scaler_enabled": use_base_scaler,
+        "fast_grad_scaler_enabled": use_fast_scaler,
         "runtime_vocab_size": runtime_vocab_size,
         "model_provider": cfg.model.provider,
     }
