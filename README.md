@@ -22,6 +22,42 @@ uv sync --frozen
 uv run python -m biollm_cls.cli train
 ```
 
+## One-command toy ablation batch (sleep vs no-sleep)
+
+Run the full seed sweep without retyping overrides:
+
+```bash
+uv run python scripts/run_toy_sleep_ablation.py \
+  --device=cuda \
+  --train-preset=rtx4070 \
+  --project=biollm-cls \
+  --entity=jublett-university-of-oxford
+```
+
+Defaults:
+
+- Seeds: `7 42 123`
+- Modes: `sleep` and `nosleep`
+- Benchmark: `toy`
+- Outputs: `outputs/batches/<group>/<run_name>`
+
+Useful options:
+
+```bash
+uv run python scripts/run_toy_sleep_ablation.py --max-steps=1500 --eval-interval=10
+uv run python scripts/run_toy_sleep_ablation.py --sleep-only
+uv run python scripts/run_toy_sleep_ablation.py --nosleep-only
+uv run python scripts/run_toy_sleep_ablation.py --dry-run
+```
+
+Publish a W&B visual comparison (paired deltas by seed) from existing toy runs:
+
+```bash
+uv run python scripts/publish_toy_sleep_comparison_wandb.py \
+  --entity=jublett-university-of-oxford \
+  --project=biollm-cls
+```
+
 The default config now uses `device=auto` and will pick CUDA when available.
 For an RTX 4070 (12GB), a good starting run is:
 
@@ -75,6 +111,61 @@ Notes:
 - `model.provider=tiny|hf` controls which neocortex backend is used.
 - For `hf`, this MVP injects the hippocampal delta at the final hidden state before the LM head.
 - `model.vocab_size` acts as an active-vocab cap for memory/compute during toy training.
+
+Qwen 0.5B instruct starting point for a 12GB GPU:
+
+```bash
+uv run python -m biollm_cls.cli train \
+  device=cuda \
+  train=qwen_0_5b_12gb \
+  model=hf_causal_lm \
+  model.hf_model_name=Qwen/Qwen2.5-0.5B-Instruct \
+  model.hf_torch_dtype=fp16 \
+  model.vocab_size=16384 \
+  benchmark=instruction \
+  benchmark.local_path=/absolute/path/to/instructions.jsonl \
+  benchmark.prompt_field=instruction \
+  benchmark.response_field=output \
+  benchmark.task_field=task \
+  benchmark.enforce_full_vocab=false \
+  replay.batch_size=8 \
+  experts.num_experts=8 \
+  consolidation.min_sleep_steps=1 \
+  consolidation.max_sleep_steps=4
+```
+
+## Instruction benchmark (continual, non-toy)
+
+You can switch from the toy stream to an instruction dataset benchmark:
+
+```bash
+uv run python -m biollm_cls.cli train \
+  model=hf_causal_lm \
+  model.hf_model_name=gpt2 \
+  model.vocab_size=50257 \
+  benchmark=instruction \
+  benchmark.dataset_name=tatsu-lab/alpaca \
+  benchmark.prompt_field=instruction \
+  benchmark.response_field=output \
+  benchmark.max_examples=20000 \
+  train=rtx4070
+```
+
+Using a local dataset instead of Hugging Face datasets:
+
+```bash
+uv run python -m biollm_cls.cli train \
+  model=hf_causal_lm \
+  model.hf_model_name=gpt2 \
+  model.vocab_size=50257 \
+  benchmark=instruction \
+  benchmark.local_path=/absolute/path/to/instructions.jsonl \
+  benchmark.prompt_field=instruction \
+  benchmark.response_field=output \
+  train=rtx4070
+```
+
+`instructions.jsonl` should contain one JSON object per line with at least prompt/response fields.
 
 ## Weights & Biases (online/offline, artifacts, checkpoints)
 

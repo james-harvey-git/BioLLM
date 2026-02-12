@@ -47,6 +47,28 @@ class ExpertSchema(StrictModel):
     saturation_threshold: float
 
 
+class BenchmarkSchema(StrictModel):
+    name: str = "toy"
+    switch_every: int = 200
+    num_tasks: int = 4
+    heldout_size: int = 128
+    dataset_name: str | None = None
+    dataset_config: str | None = None
+    dataset_split: str = "train"
+    local_path: str | None = None
+    prompt_field: str = "instruction"
+    response_field: str = "output"
+    task_field: str | None = None
+    max_examples: int = 0
+    min_examples_per_task: int = 32
+    heldout_per_task: int = 32
+    tokenizer_name: str | None = None
+    tokenizer_trust_remote_code: bool = False
+    ignore_prompt_loss: bool = True
+    prompt_template: str = "### Instruction:\\n{prompt}\\n\\n### Response:\\n"
+    enforce_full_vocab: bool = True
+
+
 class ReplaySchema(StrictModel):
     capacity: int
     batch_size: int
@@ -122,6 +144,7 @@ class CLSConfigSchema(StrictModel):
     device: str
     repro: ReproSchema
     model: ModelSchema
+    benchmark: BenchmarkSchema
     experts: ExpertSchema
     replay: ReplaySchema
     consolidation: ConsolidationSchema

@@ -81,6 +81,29 @@ class SchedulerConfig:
 
 
 @dataclass
+class BenchmarkConfig:
+    name: str = "toy"
+    switch_every: int = 200
+    num_tasks: int = 4
+    heldout_size: int = 128
+    dataset_name: str | None = None
+    dataset_config: str | None = None
+    dataset_split: str = "train"
+    local_path: str | None = None
+    prompt_field: str = "instruction"
+    response_field: str = "output"
+    task_field: str | None = None
+    max_examples: int = 0
+    min_examples_per_task: int = 32
+    heldout_per_task: int = 32
+    tokenizer_name: str | None = None
+    tokenizer_trust_remote_code: bool = False
+    ignore_prompt_loss: bool = True
+    prompt_template: str = "### Instruction:\n{prompt}\n\n### Response:\n"
+    enforce_full_vocab: bool = True
+
+
+@dataclass
 class TrainConfig:
     batch_size: int
     max_steps: int
@@ -125,6 +148,7 @@ class CLSConfig:
     device: str
     repro: ReproConfig
     model: ModelConfig
+    benchmark: BenchmarkConfig
     experts: ExpertConfig
     replay: ReplayConfig
     consolidation: ConsolidationConfig
@@ -140,6 +164,7 @@ class CLSConfig:
             device=data["device"],
             repro=ReproConfig(**data["repro"]),
             model=ModelConfig(**data["model"]),
+            benchmark=BenchmarkConfig(**data["benchmark"]),
             experts=ExpertConfig(**data["experts"]),
             replay=ReplayConfig(**data["replay"]),
             consolidation=ConsolidationConfig(

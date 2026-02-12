@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from biollm_cls.config import (
+    BenchmarkConfig,
     CLSConfig,
     ConsolidationConfig,
     EWCConfig,
@@ -28,6 +29,12 @@ def make_test_config(output_dir: str, ablation_no_sleep: bool = False, max_steps
             seq_len=16,
             dropout=0.0,
             injection_layer=1,
+        ),
+        benchmark=BenchmarkConfig(
+            name="toy",
+            switch_every=20,
+            num_tasks=4,
+            heldout_size=32,
         ),
         experts=ExpertConfig(
             num_experts=8,

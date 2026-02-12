@@ -1,4 +1,5 @@
 defaults:
+  - benchmark: toy
   - model: tiny_transformer
   - experts: default
   - replay: default

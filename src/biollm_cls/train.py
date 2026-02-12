@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from biollm_cls.benchmarks.continual_toy import ContinualToyBenchmark
+from biollm_cls.benchmarks.factory import build_benchmark
 from biollm_cls.config import CLSConfig
 from biollm_cls.consolidation.ewc import EWCState
 from biollm_cls.consolidation.refresh import ExpertRefresher
@@ -97,8 +97,10 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
     ewc = EWCState(cfg.ewc.lambda_, cfg.ewc.fisher_decay, device=device)
     ewc.snapshot_anchor(model)
 
-    benchmark = ContinualToyBenchmark(
-        vocab_size=runtime_vocab_size,
+    benchmark = build_benchmark(
+        benchmark_cfg=cfg.benchmark,
+        model_cfg=cfg.model,
+        runtime_vocab_size=runtime_vocab_size,
         seq_len=cfg.model.seq_len,
         batch_size=cfg.train.batch_size,
         seed=cfg.seed,
@@ -209,7 +211,11 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 augmented_hidden = hidden + delta
 
                 fast_logits = hippocampus.predict_logits(augmented_hidden)
-                fast_ce = F.cross_entropy(fast_logits.view(-1, runtime_vocab_size), target_ids.view(-1))
+                fast_ce = F.cross_entropy(
+                    fast_logits.view(-1, runtime_vocab_size),
+                    target_ids.view(-1),
+                    ignore_index=-100,
+                )
                 fast_loss = fast_ce + cfg.experts.routing_reg_weight * hippocampus.routing_regularizer()
 
             reward = 0.0
@@ -229,7 +235,11 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     enabled=amp_enabled,
                 ):
                     wake_logits = model.forward_from_injection(augmented_hidden)
-                    wake_loss = F.cross_entropy(wake_logits.view(-1, runtime_vocab_size), target_ids.view(-1))
+                    wake_loss = F.cross_entropy(
+                        wake_logits.view(-1, runtime_vocab_size),
+                        target_ids.view(-1),
+                        ignore_index=-100,
+                    )
                 _backward_step(wake_loss * cfg.consolidation.wake_base_lr_scale, base_optimizer, base_scaler)
                 teacher_logits = wake_logits.detach()
             else:

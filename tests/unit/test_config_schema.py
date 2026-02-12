@@ -36,3 +36,22 @@ def test_rtx4070_preset_composes_and_validates() -> None:
     validated = validate_hydra_cfg(cfg)
     assert validated.train.batch_size == 24
     assert validated.device == "cuda"
+
+
+def test_instruction_benchmark_preset_composes_and_validates() -> None:
+    conf_dir = Path(__file__).resolve().parents[2] / "conf"
+    with hydra.initialize_config_dir(version_base=None, config_dir=str(conf_dir)):
+        cfg = hydra.compose(config_name="config", overrides=["benchmark=instruction", "model=hf_causal_lm"])
+    validated = validate_hydra_cfg(cfg)
+    assert validated.benchmark.name == "instruction"
+    assert validated.model.provider == "hf"
+
+
+def test_qwen_0_5b_12gb_train_preset_composes_and_validates() -> None:
+    conf_dir = Path(__file__).resolve().parents[2] / "conf"
+    with hydra.initialize_config_dir(version_base=None, config_dir=str(conf_dir)):
+        cfg = hydra.compose(config_name="config", overrides=["train=qwen_0_5b_12gb", "device=cuda"])
+    validated = validate_hydra_cfg(cfg)
+    assert validated.train.batch_size == 2
+    assert validated.train.amp_enabled is True
+    assert validated.device == "cuda"

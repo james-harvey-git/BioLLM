@@ -19,6 +19,26 @@ model:
   hf_attn_implementation: null
   hf_gradient_checkpointing: false
   hf_local_files_only: false
+benchmark:
+  name: toy
+  switch_every: 200
+  num_tasks: 4
+  heldout_size: 128
+  dataset_name: null
+  dataset_config: null
+  dataset_split: train
+  local_path: null
+  prompt_field: instruction
+  response_field: output
+  task_field: null
+  max_examples: 0
+  min_examples_per_task: 32
+  heldout_per_task: 32
+  tokenizer_name: null
+  tokenizer_trust_remote_code: false
+  ignore_prompt_loss: true
+  prompt_template: "### Instruction:\\n{prompt}\\n\\n### Response:\\n"
+  enforce_full_vocab: true
 experts:
   num_experts: 32
   expert_hidden: 128

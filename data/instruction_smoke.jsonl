@@ -1,0 +1,20 @@
+{"instruction":"Sort numbers ascending: 3 1 2","output":"1 2 3","task":"sort"}
+{"instruction":"Sort numbers ascending: 9 4 7","output":"4 7 9","task":"sort"}
+{"instruction":"Sort numbers ascending: 8 5 6","output":"5 6 8","task":"sort"}
+{"instruction":"Sort numbers ascending: 2 0 1","output":"0 1 2","task":"sort"}
+{"instruction":"Sort numbers ascending: 10 3 9","output":"3 9 10","task":"sort"}
+{"instruction":"Sort numbers ascending: 6 1 4","output":"1 4 6","task":"sort"}
+{"instruction":"Sort numbers ascending: 12 11 7","output":"7 11 12","task":"sort"}
+{"instruction":"Sort numbers ascending: 5 2 8","output":"2 5 8","task":"sort"}
+{"instruction":"Sort numbers ascending: 13 6 9","output":"6 9 13","task":"sort"}
+{"instruction":"Sort numbers ascending: 7 3 5","output":"3 5 7","task":"sort"}
+{"instruction":"Reverse string: hello","output":"olleh","task":"reverse"}
+{"instruction":"Reverse string: world","output":"dlrow","task":"reverse"}
+{"instruction":"Reverse string: apple","output":"elppa","task":"reverse"}
+{"instruction":"Reverse string: banana","output":"ananab","task":"reverse"}
+{"instruction":"Reverse string: tiger","output":"regit","task":"reverse"}
+{"instruction":"Reverse string: zebra","output":"arbez","task":"reverse"}
+{"instruction":"Reverse string: codex","output":"xedoc","task":"reverse"}
+{"instruction":"Reverse string: matrix","output":"xirtam","task":"reverse"}
+{"instruction":"Reverse string: python","output":"nohtyp","task":"reverse"}
+{"instruction":"Reverse string: neuron","output":"noru en","task":"reverse"}
