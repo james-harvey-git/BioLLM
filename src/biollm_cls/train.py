@@ -133,6 +133,7 @@ def _wandb_focus_step_metrics(metrics: dict[str, float | str]) -> dict[str, floa
         "non_finite_step_count",
         "first_non_finite_step",
         "fisher_source_mode",
+        "pseudo_source_mode",
     )
     out: dict[str, float | str] = {}
     for key in selected_keys:
@@ -227,6 +228,8 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         replay_batch_size=cfg.replay.batch_size,
         pseudo_rehearsal=cfg.consolidation.pseudo_rehearsal,
         pseudo_ratio=cfg.consolidation.pseudo_ratio,
+        pseudo_source=cfg.consolidation.pseudo_source,
+        pseudo_random_fraction=cfg.consolidation.pseudo_random_fraction,
         fisher_use_capability_mix=cfg.consolidation.fisher_use_capability_mix,
         amp_enabled=amp_enabled,
         amp_dtype=amp_dtype,
@@ -305,6 +308,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         "hf_injection_layer_idx",
         "hf_num_decoder_layers",
         "hf_injection_fraction",
+        "hf_injection_gc_policy",
     )
     hf_runtime_payload = {k: runtime_config[k] for k in hf_runtime_keys if k in runtime_config}
     if hf_runtime_payload:
@@ -488,6 +492,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 "fisher_replay_samples": 0.0,
                 "fisher_pseudo_samples": 0.0,
                 "fisher_source_mode": "replay_only",
+                "pseudo_source_mode": str(cfg.consolidation.pseudo_source),
             }
             refresh_metrics = {"refresh_count": 0.0, "refresh_avg_kl": 0.0}
             if not cfg.train.ablation_no_sleep and scheduler.should_sleep(step):
@@ -547,6 +552,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 cl_metrics.first_non_finite_step if cl_metrics.first_non_finite_step is not None else -1
             )
             core_metrics["fisher_source_mode"] = str(sleep_metrics["fisher_source_mode"])
+            core_metrics["pseudo_source_mode"] = str(sleep_metrics["pseudo_source_mode"])
             logger.log(core_metrics, step=step, wandb_metrics=_wandb_focus_step_metrics(core_metrics))
 
             if cfg.logging.checkpoint_interval > 0 and step % cfg.logging.checkpoint_interval == 0:

@@ -67,6 +67,8 @@ class ConsolidationConfig:
     pseudo_rehearsal: bool
     refresh: RefreshConfig
     pseudo_ratio: float = 0.25
+    pseudo_source: str = "mixed"
+    pseudo_random_fraction: float = 0.5
     fisher_use_capability_mix: bool = True
 
 

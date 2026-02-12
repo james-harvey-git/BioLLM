@@ -1,4 +1,4 @@
-batch_size: 2
+batch_size: 4
 max_steps: 1600
 eval_interval: 100
 ablation_no_sleep: false

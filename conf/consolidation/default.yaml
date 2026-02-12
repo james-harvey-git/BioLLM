@@ -6,6 +6,8 @@ min_sleep_steps: 25
 max_sleep_steps: 200
 pseudo_rehearsal: false
 pseudo_ratio: 0.25
+pseudo_source: mixed
+pseudo_random_fraction: 0.5
 fisher_use_capability_mix: true
 refresh:
   kl_threshold: 0.05

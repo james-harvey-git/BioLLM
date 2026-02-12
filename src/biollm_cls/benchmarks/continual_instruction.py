@@ -4,6 +4,7 @@ import json
 import random
 import re
 import hashlib
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -159,6 +160,13 @@ class ContinualInstructionBenchmark:
         if not self.task_ids:
             raise ValueError("No tasks with enough train/eval data. Reduce min_examples_per_task.")
         self._task_count = len(self.task_ids)
+        if task_field is None:
+            warnings.warn(
+                "benchmark.task_field is unset; synthetic task IDs are assigned by hashing prompt text. "
+                "These are random buckets, not semantic tasks.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
     def _load_records(
         self,

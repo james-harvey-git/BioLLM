@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import contextmanager
 from typing import Any
 
 import torch
@@ -27,6 +28,7 @@ class HFNeocortexAdapter(NeocortexAdapter):
     """Hugging Face adapter with split-layer injection for decoder-only CausalLMs."""
 
     _warned_legacy_once = False
+    _warned_checkpoint_once = False
 
     _SUPPORTED_LAYER_PATHS = (
         "model.layers",
@@ -83,6 +85,7 @@ class HFNeocortexAdapter(NeocortexAdapter):
 
         self._split_layer: nn.Module | None = None
         self._cached_input_ids: torch.Tensor | None = None
+        self.hf_injection_gc_policy = "unchanged"
 
         self._initialize_decoder_split()
 
@@ -141,6 +144,39 @@ class HFNeocortexAdapter(NeocortexAdapter):
         self._split_layer = decoder_layers[self.hf_injection_layer_idx]
         self.hf_injection_mode = "decoder_split"
         self.hf_decoder_layer_path = layer_path
+        if bool(getattr(self.model, "is_gradient_checkpointing", False)):
+            self.hf_injection_gc_policy = "disable_during_forward_from_injection"
+
+    @classmethod
+    def _warn_checkpoint_once(cls, message: str) -> None:
+        if cls._warned_checkpoint_once:
+            return
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        cls._warned_checkpoint_once = True
+
+    @contextmanager
+    def _suspend_gradient_checkpointing_for_injection(self):
+        if self.hf_injection_mode != "decoder_split":
+            yield
+            return
+
+        is_enabled = bool(getattr(self.model, "is_gradient_checkpointing", False))
+        can_disable = hasattr(self.model, "gradient_checkpointing_disable")
+        can_enable = hasattr(self.model, "gradient_checkpointing_enable")
+
+        if not is_enabled or not can_disable or not can_enable:
+            yield
+            return
+
+        self._warn_checkpoint_once(
+            "Temporarily disabling HF gradient checkpointing during split-layer forward_from_injection to "
+            "avoid hook/recompute ambiguity. This only affects injection forwards."
+        )
+        self.model.gradient_checkpointing_disable()
+        try:
+            yield
+        finally:
+            self.model.gradient_checkpointing_enable()
 
     @staticmethod
     def _replace_layer_output(output: Any, hidden: torch.Tensor) -> Any:
@@ -198,11 +234,12 @@ class HFNeocortexAdapter(NeocortexAdapter):
                 lambda _module, _inputs, output: self._replace_layer_output(output, hidden)
             )
             try:
-                out = self.model(
-                    input_ids=self._cached_input_ids,
-                    use_cache=False,
-                    return_dict=True,
-                )
+                with self._suspend_gradient_checkpointing_for_injection():
+                    out = self.model(
+                        input_ids=self._cached_input_ids,
+                        use_cache=False,
+                        return_dict=True,
+                    )
             finally:
                 handle.remove()
                 self._cached_input_ids = None
@@ -226,4 +263,5 @@ class HFNeocortexAdapter(NeocortexAdapter):
             "hf_injection_layer_idx": int(self.hf_injection_layer_idx),
             "hf_num_decoder_layers": int(self.hf_num_decoder_layers),
             "hf_injection_fraction": float(self.hf_injection_fraction),
+            "hf_injection_gc_policy": self.hf_injection_gc_policy,
         }

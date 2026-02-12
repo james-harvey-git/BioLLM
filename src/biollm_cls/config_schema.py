@@ -91,6 +91,8 @@ class ConsolidationSchema(StrictModel):
     min_sleep_steps: int
     max_sleep_steps: int
     pseudo_rehearsal: bool
+    pseudo_source: str = "mixed"
+    pseudo_random_fraction: float = 0.5
     pseudo_ratio: float = 0.25
     fisher_use_capability_mix: bool = True
     refresh: RefreshSchema
