@@ -30,6 +30,9 @@ class _FakeDecoderOnlyLM(nn.Module):
         self.embed_tokens = nn.Embedding(vocab_size, hidden_size)
         self.lm_head = nn.Linear(hidden_size, vocab_size, bias=False)
         self._layer_path = layer_path
+        self.is_gradient_checkpointing = False
+        self.gc_enable_calls = 0
+        self.gc_disable_calls = 0
 
         layers = nn.ModuleList([_FakeDecoderLayer(hidden_size, float(i + 1)) for i in range(num_layers)])
         self._set_layers(layer_path, layers)
@@ -52,6 +55,14 @@ class _FakeDecoderOnlyLM(nn.Module):
 
     def get_output_embeddings(self) -> nn.Module:
         return self.lm_head
+
+    def gradient_checkpointing_enable(self) -> None:
+        self.is_gradient_checkpointing = True
+        self.gc_enable_calls += 1
+
+    def gradient_checkpointing_disable(self) -> None:
+        self.is_gradient_checkpointing = False
+        self.gc_disable_calls += 1
 
     def forward(
         self,
@@ -152,3 +163,28 @@ def test_hf_legacy_fallback_can_be_disabled(monkeypatch: pytest.MonkeyPatch) -> 
 
     with pytest.raises(ValueError):
         HFNeocortexAdapter(_hf_cfg(hf_allow_legacy_injection_fallback=False))
+
+
+def test_hf_split_temporarily_disables_gradient_checkpointing_for_injection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_fake_transformers(monkeypatch, lambda: _FakeDecoderOnlyLM(layer_path="model.layers", num_layers=4))
+    HFNeocortexAdapter._warned_checkpoint_once = False
+
+    adapter = HFNeocortexAdapter(_hf_cfg(hf_gradient_checkpointing=True))
+    assert adapter.hf_injection_mode == "decoder_split"
+    assert adapter.hf_injection_gc_policy == "disable_during_forward_from_injection"
+
+    model = adapter.model
+    assert getattr(model, "is_gradient_checkpointing", False) is True
+    assert model.gc_enable_calls == 1
+    assert model.gc_disable_calls == 0
+
+    input_ids = torch.randint(0, 32, (2, 6), dtype=torch.long)
+    hidden = adapter.forward_to_injection(input_ids)
+    with pytest.warns(RuntimeWarning):
+        _ = adapter.forward_from_injection(hidden)
+
+    assert model.gc_disable_calls == 1
+    assert model.gc_enable_calls == 2
+    assert getattr(model, "is_gradient_checkpointing", False) is True

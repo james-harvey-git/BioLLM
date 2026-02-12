@@ -12,6 +12,16 @@ from biollm_cls.models.hippocampus import HippocampalMoE
 from biollm_cls.models.neocortex import TinyCausalTransformer
 
 
+class _CountingTinyCausalTransformer(TinyCausalTransformer):
+    def __init__(self, cfg: ModelConfig) -> None:
+        super().__init__(cfg)
+        self.forward_base_calls = 0
+
+    def forward_base(self, input_ids: torch.Tensor) -> torch.Tensor:
+        self.forward_base_calls += 1
+        return super().forward_base(input_ids)
+
+
 def _make_components() -> tuple[TinyCausalTransformer, HippocampalMoE, ReservoirReplayBuffer, EWCState, torch.optim.AdamW]:
     cfg = ModelConfig(
         vocab_size=32,
@@ -181,3 +191,73 @@ def test_sleep_fisher_replay_only_when_pseudo_disabled() -> None:
     assert metrics["steps"] > 0
     assert float(metrics["fisher_pseudo_samples"]) == 0.0
     assert metrics["fisher_source_mode"] == "replay_only"
+
+
+def test_sleep_random_token_pseudo_source_mode() -> None:
+    torch.manual_seed(23)
+    model, moe, replay, ewc, optimizer = _make_components()
+    _populate_replay(model, moe, replay, n=10)
+
+    before_counts = moe.activation_counts.detach().clone()
+    consolidator = Consolidator(
+        base_model=model,
+        hippocampus=moe,
+        replay_buffer=replay,
+        ewc=ewc,
+        base_optimizer=optimizer,
+        device=torch.device("cpu"),
+        replay_batch_size=5,
+        pseudo_rehearsal=True,
+        pseudo_ratio=0.4,
+        pseudo_source="random_tokens",
+        fisher_use_capability_mix=True,
+        amp_enabled=False,
+        grad_scaler=None,
+    )
+    metrics = consolidator.run_sleep_cycle(steps=2)
+
+    assert metrics["steps"] > 0
+    assert float(metrics["pseudo_batch_size"]) > 0.0
+    assert metrics["pseudo_source_mode"] == "random_tokens"
+    assert metrics["fisher_source_mode"] == "mixed_replay_pseudo"
+    assert torch.allclose(before_counts, moe.activation_counts)
+
+
+def test_sleep_reuses_distill_forward_for_fisher_when_mixed_enabled() -> None:
+    torch.manual_seed(29)
+    cfg = ModelConfig(
+        vocab_size=32,
+        hidden_size=16,
+        num_layers=2,
+        num_heads=4,
+        seq_len=8,
+        dropout=0.0,
+        injection_layer=1,
+    )
+    model = _CountingTinyCausalTransformer(cfg)
+    moe = HippocampalMoE(hidden_size=16, vocab_size=32, num_experts=2, expert_hidden=8, top_k=1)
+    replay = ReservoirReplayBuffer(capacity=32)
+    ewc = EWCState(lambda_=10.0, fisher_decay=0.99, device=torch.device("cpu"))
+    ewc.snapshot_anchor(model)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+    _populate_replay(model, moe, replay, n=12)
+
+    consolidator = Consolidator(
+        base_model=model,
+        hippocampus=moe,
+        replay_buffer=replay,
+        ewc=ewc,
+        base_optimizer=optimizer,
+        device=torch.device("cpu"),
+        replay_batch_size=6,
+        pseudo_rehearsal=True,
+        pseudo_ratio=0.25,
+        pseudo_source="mixed",
+        fisher_use_capability_mix=True,
+        amp_enabled=False,
+        grad_scaler=None,
+    )
+    metrics = consolidator.run_sleep_cycle(steps=3)
+
+    assert metrics["steps"] > 0
+    assert model.forward_base_calls == int(metrics["steps"])

@@ -77,6 +77,9 @@ def test_ni8_pilot_and_continual_preset_composes() -> None:
     validated = validate_hydra_cfg(cfg)
     assert validated.benchmark.eval_local_path == "data/ni8/eval.jsonl"
     assert validated.benchmark.task_selection_seed == 42
+    assert validated.train.batch_size == 4
     assert validated.train.ablation_disable_hippocampus is False
     assert validated.consolidation.pseudo_ratio == 0.25
+    assert validated.consolidation.pseudo_source == "mixed"
+    assert validated.consolidation.pseudo_random_fraction == 0.5
     assert validated.consolidation.fisher_use_capability_mix is True
