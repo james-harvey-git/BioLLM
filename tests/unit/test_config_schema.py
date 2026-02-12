@@ -48,6 +48,9 @@ def test_instruction_benchmark_preset_composes_and_validates() -> None:
     assert validated.benchmark.eval_local_path is None
     assert validated.model.hf_injection_fraction == 0.7
     assert validated.model.hf_allow_legacy_injection_fallback is True
+    assert validated.logging.wandb_auto_group is True
+    assert validated.logging.wandb_log_full_history is False
+    assert validated.logging.upload_metrics_artifact is True
 
 
 def test_qwen_0_5b_12gb_train_preset_composes_and_validates() -> None:

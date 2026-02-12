@@ -140,11 +140,14 @@ class LoggingConfig:
     wandb_resume: str | None = None
     wandb_run_id: str | None = None
     wandb_api_key_env_var: str = "WANDB_API_KEY"
+    wandb_auto_group: bool = True
+    wandb_log_full_history: bool = False
     wandb_watch_model: bool = False
     wandb_watch_log_freq: int = 100
     checkpoint_interval: int = 200
     checkpoint_keep_last: int = 3
     upload_checkpoints: bool = True
+    upload_metrics_artifact: bool = True
     upload_config_artifact: bool = True
     upload_metadata_artifact: bool = True
 

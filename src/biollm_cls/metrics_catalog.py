@@ -66,6 +66,8 @@ def training_metric_glossary_rows() -> list[dict[str, str]]:
         MetricDoc("hf_injection_layer_idx", "runtime", "n/a", "index", "HF decoder layer index where injection is applied (decoder_split mode)."),
         MetricDoc("hf_num_decoder_layers", "runtime", "n/a", "count", "Total decoder layers resolved for HF split injection."),
         MetricDoc("hf_injection_fraction", "runtime", "n/a", "fraction", "Configured fraction used to compute HF split depth."),
+        MetricDoc("core/*", "wandb-history", "mixed", "mixed", "Curated W&B dashboard metrics namespace used to keep run dashboards compact."),
+        MetricDoc("boundary/*", "wandb-history", "mixed", "mixed", "Curated task-boundary W&B dashboard metrics namespace."),
         MetricDoc("cuda_mem_alloc_mb", "wake-step", "lower", "MB", "CUDA allocated memory snapshot."),
         MetricDoc("cuda_mem_reserved_mb", "wake-step", "lower", "MB", "CUDA reserved memory snapshot."),
         MetricDoc("non_finite_step_count", "wake-step+summary", "lower", "count", "Number of training steps where tracked scalars were NaN/Inf."),

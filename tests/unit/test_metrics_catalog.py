@@ -17,6 +17,8 @@ def test_training_metric_glossary_contains_core_keys() -> None:
         "replay_added_this_step",
         "pseudo_batch_size",
         "fisher_source_mode",
+        "core/*",
+        "boundary/*",
         "seen_acc_avg",
         "forgetting",
         "final_seen_acc_avg",

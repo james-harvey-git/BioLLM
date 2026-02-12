@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
+import re
 
 import numpy as np
 import torch
@@ -95,6 +97,66 @@ def _neutral_routing(batch_size: int, top_k: int, num_experts: int, device: torc
     topk_probs = torch.full((batch_size, safe_topk), 1.0 / safe_topk, device=device)
     router_probs = torch.full((batch_size, safe_experts), 1.0 / safe_experts, device=device)
     return RoutingInfo(topk_indices=topk_indices, topk_probs=topk_probs, router_probs=router_probs)
+
+
+def _slug_token(value: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", value.strip().lower())
+    cleaned = cleaned.strip("-")
+    return cleaned or "na"
+
+
+def _auto_wandb_group(cfg: CLSConfig) -> str:
+    model_name = cfg.model.provider
+    if cfg.model.provider.lower().strip() in {"hf", "huggingface"} and cfg.model.hf_model_name:
+        model_name = cfg.model.hf_model_name.split("/")[-1]
+    date_stamp = datetime.now().strftime("%Y%m%d")
+    return f"auto-{_slug_token(cfg.benchmark.name)}-{_slug_token(model_name)}-{date_stamp}"
+
+
+def _wandb_focus_step_metrics(metrics: dict[str, float | str]) -> dict[str, float | str]:
+    selected_keys = (
+        "task_loss",
+        "old_task_loss",
+        "forgetting_index",
+        "sleep_pressure",
+        "sleep_count",
+        "sleep_steps",
+        "base_teacher_kl",
+        "distill_kl",
+        "ewc_penalty",
+        "expert_util_entropy",
+        "batch_supervised_fraction",
+        "replay_size",
+        "replay_added_this_step",
+        "pseudo_batch_size",
+        "sleep_mix_ratio_pseudo",
+        "non_finite_step_count",
+        "first_non_finite_step",
+        "fisher_source_mode",
+    )
+    out: dict[str, float | str] = {}
+    for key in selected_keys:
+        if key in metrics:
+            out[f"core/{key}"] = metrics[key]
+    return out
+
+
+def _wandb_focus_boundary_metrics(metrics: dict[str, float]) -> dict[str, float]:
+    selected_keys = (
+        "seen_acc_avg",
+        "seen_loss_avg",
+        "forgetting",
+        "bwt",
+        "tasks_completed",
+        "boundary_index",
+        "boundary_step",
+    )
+    out: dict[str, float] = {}
+    for key in selected_keys:
+        if key in metrics:
+            prefix = "boundary" if key.startswith("boundary_") else "core"
+            out[f"{prefix}/{key}"] = float(metrics[key])
+    return out
 
 
 def run_training(cfg: CLSConfig) -> dict[str, float]:
@@ -201,6 +263,10 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
             runtime_config.update(dict(model.runtime_info()))
         except Exception:
             pass
+    wandb_group = cfg.logging.wandb_group
+    if cfg.logging.use_wandb and not wandb_group and cfg.logging.wandb_auto_group:
+        wandb_group = _auto_wandb_group(cfg)
+        runtime_config["wandb_group_auto_assigned"] = wandb_group
     config_dict["runtime"] = runtime_config
     metric_glossary_rows = training_metric_glossary_rows()
     logger = MetricsLogger(
@@ -211,15 +277,17 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         config=config_dict,
         wandb_entity=cfg.logging.wandb_entity,
         wandb_run_name=cfg.logging.wandb_run_name,
-        wandb_group=cfg.logging.wandb_group,
+        wandb_group=wandb_group,
         wandb_job_type=cfg.logging.wandb_job_type,
         wandb_tags=cfg.logging.wandb_tags,
         wandb_notes=cfg.logging.wandb_notes,
         wandb_resume=cfg.logging.wandb_resume,
         wandb_run_id=cfg.logging.wandb_run_id,
         wandb_api_key_env_var=cfg.logging.wandb_api_key_env_var,
+        wandb_log_full_history=cfg.logging.wandb_log_full_history,
         checkpoint_keep_last=cfg.logging.checkpoint_keep_last,
         upload_checkpoints=cfg.logging.upload_checkpoints,
+        upload_metrics_artifact=cfg.logging.upload_metrics_artifact,
         upload_config_artifact=cfg.logging.upload_config_artifact,
         upload_metadata_artifact=cfg.logging.upload_metadata_artifact,
         metric_glossary_rows=metric_glossary_rows,
@@ -293,7 +361,11 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     boundary_payload[f"task_acc/{task_id}"] = float(result.token_acc)
                     boundary_payload[f"task_loss/{task_id}"] = float(result.loss)
                     boundary_payload[f"task_tokens/{task_id}"] = float(result.n_tokens)
-                logger.log(boundary_payload, step=step - 1)
+                logger.log(
+                    boundary_payload,
+                    step=step - 1,
+                    wandb_metrics=_wandb_focus_boundary_metrics(boundary_payload),
+                )
 
             batch = benchmark.sample_batch(step, cfg.train.batch_size)
             current_task = int(batch.task_id)
@@ -475,7 +547,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 cl_metrics.first_non_finite_step if cl_metrics.first_non_finite_step is not None else -1
             )
             core_metrics["fisher_source_mode"] = str(sleep_metrics["fisher_source_mode"])
-            logger.log(core_metrics, step=step)
+            logger.log(core_metrics, step=step, wandb_metrics=_wandb_focus_step_metrics(core_metrics))
 
             if cfg.logging.checkpoint_interval > 0 and step % cfg.logging.checkpoint_interval == 0:
                 logger.save_checkpoint(
@@ -513,7 +585,11 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 boundary_payload[f"task_acc/{task_id}"] = float(result.token_acc)
                 boundary_payload[f"task_loss/{task_id}"] = float(result.loss)
                 boundary_payload[f"task_tokens/{task_id}"] = float(result.n_tokens)
-            logger.log(boundary_payload, step=cfg.train.max_steps)
+            logger.log(
+                boundary_payload,
+                step=cfg.train.max_steps,
+                wandb_metrics=_wandb_focus_boundary_metrics(boundary_payload),
+            )
 
         cl_summary = cl_metrics.summary()
         final_summary = {

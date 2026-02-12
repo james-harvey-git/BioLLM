@@ -29,6 +29,8 @@ def test_metrics_logger_local_and_checkpoint_rotation(tmp_path: Path) -> None:
         wandb_mode="offline",
         config={},
         checkpoint_keep_last=2,
+        wandb_log_full_history=False,
+        upload_metrics_artifact=True,
         metric_glossary_rows=[
             {
                 "metric": "task_loss",
@@ -40,7 +42,11 @@ def test_metrics_logger_local_and_checkpoint_rotation(tmp_path: Path) -> None:
             }
         ],
     )
-    logger.log({"a": 1.0, "mode": "mixed_replay_pseudo"}, step=1)
+    logger.log(
+        {"a": 1.0, "mode": "mixed_replay_pseudo", "hidden_key": 123.0},
+        step=1,
+        wandb_metrics={"core/a": 1.0},
+    )
     logger.save_checkpoint(1, model, hip, opt_a, opt_b)
     logger.save_checkpoint(2, model, hip, opt_a, opt_b)
     logger.save_checkpoint(3, model, hip, opt_a, opt_b)

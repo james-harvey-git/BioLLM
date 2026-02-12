@@ -372,14 +372,25 @@ uv run python -m biollm_cls.cli train \
 
 What is logged to W&B:
 
-- Per-step scalar metrics (task loss, forgetting index, sleep metrics, KL, etc.)
+- Curated per-step dashboard namespace (`core/*`) with the highest-signal run metrics
+- Curated boundary namespace (`boundary/*`) for continual-learning boundary tracking
 - Runtime mode flags (e.g., `hf_injection_mode`, split depth metadata) logged at step 0
 - Final summary metrics
 - Metric glossary table (`metric_glossary/table`) with definitions for all logged metrics
 - `validated_config.json` artifact
 - `run_metadata.json` artifact
+- Full raw metrics history artifact (`<run_id>-full-metrics-history`) containing complete `metrics.jsonl`
 - Periodic and final model checkpoints as model artifacts
 - Run artifacts: `metric_glossary.json` and `metric_glossary.md`
+
+W&B dashboard cleanup defaults:
+
+- `logging.wandb_log_full_history=false` keeps W&B charts compact by logging curated namespaces only
+- Full metric detail is still available in W&B via the uploaded metrics artifact
+- `logging.wandb_auto_group=true` auto-assigns group when not specified:
+  - `auto-<benchmark>-<model>-<YYYYMMDD>`
+- To force full metric history into W&B charts, set:
+  - `logging.wandb_log_full_history=true`
 
 If `WANDB_API_KEY` is not set and mode is online, the run automatically falls back to offline mode.
 

@@ -26,8 +26,10 @@ class MetricsLogger:
         wandb_resume: str | None = None,
         wandb_run_id: str | None = None,
         wandb_api_key_env_var: str = "WANDB_API_KEY",
+        wandb_log_full_history: bool = False,
         checkpoint_keep_last: int = 3,
         upload_checkpoints: bool = True,
+        upload_metrics_artifact: bool = True,
         upload_config_artifact: bool = True,
         upload_metadata_artifact: bool = True,
         metric_glossary_rows: list[dict[str, str]] | None = None,
@@ -40,9 +42,11 @@ class MetricsLogger:
         self.metrics_file = self.output_path / "metrics.jsonl"
         self._fp = self.metrics_file.open("a", encoding="utf-8")
         self.upload_checkpoints = upload_checkpoints
+        self.upload_metrics_artifact = upload_metrics_artifact
         self.upload_config_artifact = upload_config_artifact
         self.upload_metadata_artifact = upload_metadata_artifact
         self.checkpoint_keep_last = checkpoint_keep_last
+        self.wandb_log_full_history = wandb_log_full_history
         self.metric_glossary_rows = metric_glossary_rows or []
         self.metric_glossary_markdown = metric_glossary_markdown
 
@@ -147,7 +151,7 @@ class MetricsLogger:
         except Exception as exc:
             self._append_warning(f"W&B watch failed: {exc}")
 
-    def log(self, metrics: dict[str, Any], step: int) -> None:
+    def log(self, metrics: dict[str, Any], step: int, wandb_metrics: dict[str, Any] | None = None) -> None:
         payload: dict[str, Any] = {"step": int(step)}
         for key, value in metrics.items():
             if isinstance(value, str):
@@ -163,7 +167,23 @@ class MetricsLogger:
         self._fp.write(json.dumps(payload) + "\n")
         self._fp.flush()
         if self._wandb is not None:
-            self._wandb.log(payload)
+            if self.wandb_log_full_history:
+                self._wandb.log(payload)
+            else:
+                source = wandb_metrics if wandb_metrics is not None else metrics
+                wb_payload: dict[str, Any] = {"step": int(step)}
+                for key, value in source.items():
+                    if isinstance(value, str):
+                        wb_payload[key] = value
+                        continue
+                    if isinstance(value, numbers.Real):
+                        wb_payload[key] = float(value)
+                        continue
+                    try:
+                        wb_payload[key] = float(value)
+                    except Exception:
+                        wb_payload[key] = str(value)
+                self._wandb.log(wb_payload)
 
     def log_summary(self, summary: dict[str, float]) -> None:
         if self._wandb is None:
@@ -230,4 +250,12 @@ class MetricsLogger:
             self._fp.close()
         finally:
             if self._wandb is not None:
+                if self.upload_metrics_artifact:
+                    run_id = getattr(self._wandb, "id", "run")
+                    self.log_artifact_file(
+                        self.metrics_file,
+                        artifact_name=f"{run_id}-full-metrics-history",
+                        artifact_type="metrics",
+                        aliases=["latest"],
+                    )
                 self._wandb.finish()
