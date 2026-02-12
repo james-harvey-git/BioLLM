@@ -16,6 +16,7 @@ from biollm_cls.control.scheduler import SleepPressureController, StepStats
 from biollm_cls.eval.continual_metrics import ContinualMetricsTracker
 from biollm_cls.logging import MetricsLogger
 from biollm_cls.memory.replay_buffer import Episode, ReservoirReplayBuffer
+from biollm_cls.metrics_catalog import render_metric_glossary_markdown, training_metric_glossary_rows
 from biollm_cls.models.factory import build_neocortex
 from biollm_cls.models.hippocampus import HippocampalMoE, RoutingInfo
 from biollm_cls.repro import save_run_metadata, set_seed
@@ -175,6 +176,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         "runtime_vocab_size": runtime_vocab_size,
         "model_provider": cfg.model.provider,
     }
+    metric_glossary_rows = training_metric_glossary_rows()
     logger = MetricsLogger(
         output_dir=cfg.logging.output_dir,
         use_wandb=cfg.logging.use_wandb,
@@ -194,6 +196,11 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         upload_checkpoints=cfg.logging.upload_checkpoints,
         upload_config_artifact=cfg.logging.upload_config_artifact,
         upload_metadata_artifact=cfg.logging.upload_metadata_artifact,
+        metric_glossary_rows=metric_glossary_rows,
+        metric_glossary_markdown=render_metric_glossary_markdown(
+            "Training W&B Metrics",
+            metric_glossary_rows,
+        ),
     )
 
     if cfg.logging.wandb_watch_model:

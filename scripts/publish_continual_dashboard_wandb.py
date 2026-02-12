@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import statistics as stats
 from collections import defaultdict
@@ -11,6 +12,11 @@ from pathlib import Path
 from typing import Any
 
 import wandb
+
+from biollm_cls.metrics_catalog import (
+    continual_dashboard_metric_glossary_rows,
+    render_metric_glossary_markdown,
+)
 
 
 @dataclass
@@ -329,6 +335,13 @@ def main() -> int:
         ),
     }
 
+    glossary_rows = continual_dashboard_metric_glossary_rows()
+    glossary_cols = ["metric", "scope", "direction", "unit", "definition", "formula"]
+    glossary_table = wandb.Table(columns=glossary_cols)
+    for row in glossary_rows:
+        glossary_table.add_data(*[row.get(col, "") for col in glossary_cols])
+    payload["continual/metric_glossary"] = glossary_table
+
     if boundary_agg:
         boundary_table = wandb.Table(columns=list(boundary_agg[0].keys()))
         for row in boundary_agg:
@@ -351,12 +364,19 @@ def main() -> int:
                 )
 
     run.log(payload)
+    (output_dir / "metric_glossary.json").write_text(json.dumps(glossary_rows, indent=2), encoding="utf-8")
+    (output_dir / "metric_glossary.md").write_text(
+        render_metric_glossary_markdown("Continual Dashboard Metrics", glossary_rows),
+        encoding="utf-8",
+    )
     run.summary["source_group"] = args.group
     run.summary["suite_rows"] = len(suite_rows)
     run.summary["pair_rows"] = len(pair_rows)
     run.summary["csv_suite_summary"] = str((output_dir / "suite_summary.csv").as_posix())
     run.summary["csv_boundary_metrics"] = str((output_dir / "boundary_metrics.csv").as_posix())
     run.summary["csv_task_matrix"] = str((output_dir / "task_matrix.csv").as_posix())
+    run.summary["metric_glossary_json"] = str((output_dir / "metric_glossary.json").as_posix())
+    run.summary["metric_glossary_md"] = str((output_dir / "metric_glossary.md").as_posix())
     run.finish()
 
     print(f"Wrote: {output_dir / 'suite_summary.csv'}")

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import statistics as stats
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 
 import wandb
+
+from biollm_cls.metrics_catalog import render_metric_glossary_markdown, toy_dashboard_metric_glossary_rows
 
 
 @dataclass
@@ -217,6 +221,13 @@ def publish_visuals(
         ),
     }
 
+    glossary_rows = toy_dashboard_metric_glossary_rows()
+    glossary_cols = ["metric", "scope", "direction", "unit", "definition", "formula"]
+    glossary_table = wandb.Table(columns=glossary_cols)
+    for row in glossary_rows:
+        glossary_table.add_data(*[row.get(col, "") for col in glossary_cols])
+    payload["toy_ablation/metric_glossary"] = glossary_table
+
     if pairs:
         delta_old = [float(p["delta_final_old_task_loss_nosleep_minus_sleep"]) for p in pairs]
         delta_mean_forgetting = [float(p["delta_mean_forgetting_nosleep_minus_sleep"]) for p in pairs]
@@ -232,6 +243,15 @@ def publish_visuals(
         )
 
     run.log(payload)
+    output_dir = Path("outputs/eval/toy_ablation")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "metric_glossary.json").write_text(json.dumps(glossary_rows, indent=2), encoding="utf-8")
+    (output_dir / "metric_glossary.md").write_text(
+        render_metric_glossary_markdown("Toy Ablation Dashboard Metrics", glossary_rows),
+        encoding="utf-8",
+    )
+    run.summary["metric_glossary_json"] = str((output_dir / "metric_glossary.json").as_posix())
+    run.summary["metric_glossary_md"] = str((output_dir / "metric_glossary.md").as_posix())
     print(f"Published analysis run: {run.url}")
     run.finish()
 

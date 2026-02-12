@@ -316,9 +316,11 @@ What is logged to W&B:
 
 - Per-step scalar metrics (task loss, forgetting index, sleep metrics, KL, etc.)
 - Final summary metrics
+- Metric glossary table (`metric_glossary/table`) with definitions for all logged metrics
 - `validated_config.json` artifact
 - `run_metadata.json` artifact
 - Periodic and final model checkpoints as model artifacts
+- Run artifacts: `metric_glossary.json` and `metric_glossary.md`
 
 If `WANDB_API_KEY` is not set and mode is online, the run automatically falls back to offline mode.
 

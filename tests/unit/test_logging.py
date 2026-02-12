@@ -29,6 +29,16 @@ def test_metrics_logger_local_and_checkpoint_rotation(tmp_path: Path) -> None:
         wandb_mode="offline",
         config={},
         checkpoint_keep_last=2,
+        metric_glossary_rows=[
+            {
+                "metric": "task_loss",
+                "scope": "wake-step",
+                "direction": "lower",
+                "unit": "cross-entropy",
+                "definition": "Test metric entry.",
+                "formula": "",
+            }
+        ],
     )
     logger.log({"a": 1.0}, step=1)
     logger.save_checkpoint(1, model, hip, opt_a, opt_b)
@@ -38,5 +48,7 @@ def test_metrics_logger_local_and_checkpoint_rotation(tmp_path: Path) -> None:
 
     metrics_path = tmp_path / "metrics.jsonl"
     assert metrics_path.exists()
+    assert (tmp_path / "metric_glossary.json").exists()
+    assert (tmp_path / "metric_glossary.md").exists()
     ckpts = sorted((tmp_path / "checkpoints").glob("step_*.pt"))
     assert len(ckpts) == 2

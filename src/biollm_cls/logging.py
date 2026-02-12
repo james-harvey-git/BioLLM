@@ -7,6 +7,7 @@ from typing import Any
 
 import torch
 
+
 class MetricsLogger:
     def __init__(
         self,
@@ -28,6 +29,8 @@ class MetricsLogger:
         upload_checkpoints: bool = True,
         upload_config_artifact: bool = True,
         upload_metadata_artifact: bool = True,
+        metric_glossary_rows: list[dict[str, str]] | None = None,
+        metric_glossary_markdown: str | None = None,
     ) -> None:
         self.output_path = Path(output_dir)
         self.output_path.mkdir(parents=True, exist_ok=True)
@@ -39,6 +42,8 @@ class MetricsLogger:
         self.upload_config_artifact = upload_config_artifact
         self.upload_metadata_artifact = upload_metadata_artifact
         self.checkpoint_keep_last = checkpoint_keep_last
+        self.metric_glossary_rows = metric_glossary_rows or []
+        self.metric_glossary_markdown = metric_glossary_markdown
 
         self._wandb_module = None
         self._wandb = None
@@ -73,10 +78,65 @@ class MetricsLogger:
                 self._append_warning(f"W&B init failed; continuing without W&B. Error: {exc}")
                 self._wandb = None
 
+        self._persist_metric_glossary()
+        if self._wandb is not None and self.metric_glossary_rows:
+            self._log_metric_glossary_to_wandb()
+
     def _append_warning(self, msg: str) -> None:
         warning_file = self.output_path / "wandb_warnings.log"
         with warning_file.open("a", encoding="utf-8") as fp:
             fp.write(msg + "\n")
+
+    @staticmethod
+    def _render_metric_glossary_markdown(rows: list[dict[str, str]]) -> str:
+        lines = [
+            "# W&B Metric Glossary",
+            "",
+            "| Metric | Scope | Direction | Unit | Definition | Formula |",
+            "|---|---|---|---|---|---|",
+        ]
+        for row in rows:
+            values = [
+                str(row.get("metric", "")).replace("|", "\\|"),
+                str(row.get("scope", "")).replace("|", "\\|"),
+                str(row.get("direction", "")).replace("|", "\\|"),
+                str(row.get("unit", "")).replace("|", "\\|"),
+                str(row.get("definition", "")).replace("|", "\\|"),
+                str(row.get("formula", "")).replace("|", "\\|"),
+            ]
+            lines.append(
+                f"| {values[0]} | {values[1]} | {values[2]} | {values[3]} | {values[4]} | {values[5]} |"
+            )
+        lines.append("")
+        return "\n".join(lines)
+
+    def _persist_metric_glossary(self) -> None:
+        if not self.metric_glossary_rows:
+            return
+        glossary_json = self.output_path / "metric_glossary.json"
+        glossary_md = self.output_path / "metric_glossary.md"
+        glossary_json.write_text(json.dumps(self.metric_glossary_rows, indent=2), encoding="utf-8")
+        markdown = self.metric_glossary_markdown or self._render_metric_glossary_markdown(self.metric_glossary_rows)
+        glossary_md.write_text(markdown, encoding="utf-8")
+
+    def _log_metric_glossary_to_wandb(self) -> None:
+        if self._wandb is None:
+            return
+        try:
+            columns = ["metric", "scope", "direction", "unit", "definition", "formula"]
+            table = self._wandb_module.Table(columns=columns)
+            for row in self.metric_glossary_rows:
+                table.add_data(*[str(row.get(col, "")) for col in columns])
+            self._wandb.log({"step": 0, "metric_glossary/table": table})
+
+            glossary_json = self.output_path / "metric_glossary.json"
+            glossary_md = self.output_path / "metric_glossary.md"
+            self.log_artifact_file(glossary_json, artifact_name="metric-glossary", artifact_type="metadata")
+            self.log_artifact_file(glossary_md, artifact_name="metric-glossary-docs", artifact_type="docs")
+            self._wandb.summary["metric_glossary_json"] = str(glossary_json.as_posix())
+            self._wandb.summary["metric_glossary_md"] = str(glossary_md.as_posix())
+        except Exception as exc:
+            self._append_warning(f"W&B metric glossary logging failed: {exc}")
 
     def watch(self, model: torch.nn.Module, log_freq: int = 100) -> None:
         if self._wandb is None:
