@@ -57,6 +57,16 @@ class HippocampalMoE(nn.Module):
         for expert in self.experts:
             self._expert_init.append({k: v.detach().clone() for k, v in expert.state_dict().items()})
 
+    def _apply_expert_casted(self, expert_id: int, hidden_slice: torch.Tensor, out_dtype: torch.dtype) -> torch.Tensor:
+        expert = self.experts[expert_id]
+        param = next(expert.parameters(), None)
+        if param is None:
+            out = expert(hidden_slice)
+        else:
+            expert_input = hidden_slice if hidden_slice.dtype == param.dtype else hidden_slice.to(param.dtype)
+            out = expert(expert_input)
+        return out if out.dtype == out_dtype else out.to(out_dtype)
+
     def _usage_bonus_vector(self) -> torch.Tensor:
         if float(self.activation_counts.sum().item()) <= 0.0:
             return torch.zeros_like(self.activation_counts)
@@ -79,11 +89,13 @@ class HippocampalMoE(nn.Module):
     def _apply_topk(self, hidden: torch.Tensor, topk_idx: torch.Tensor, topk_probs: torch.Tensor) -> torch.Tensor:
         bsz, _, hdim = hidden.shape
         delta = torch.zeros_like(hidden)
+        out_dtype = hidden.dtype
         for b in range(bsz):
             for j in range(self.top_k):
                 eid = int(topk_idx[b, j].item())
-                weight = topk_probs[b, j]
-                delta[b] = delta[b] + weight * self.experts[eid](hidden[b])
+                weight = topk_probs[b, j].to(out_dtype)
+                expert_out = self._apply_expert_casted(eid, hidden[b], out_dtype=out_dtype)
+                delta[b] = delta[b] + weight * expert_out
                 self.activation_counts[eid] += 1.0
         assert delta.shape[-1] == hdim
         return delta
@@ -114,11 +126,13 @@ class HippocampalMoE(nn.Module):
 
         bsz = hidden.shape[0]
         delta = torch.zeros_like(hidden)
+        out_dtype = hidden.dtype
         for b in range(bsz):
             for j in range(expert_ids.shape[1]):
                 eid = int(expert_ids[b, j].item())
-                w = expert_weights[b, j]
-                delta[b] = delta[b] + w * self.experts[eid](hidden[b])
+                w = expert_weights[b, j].to(out_dtype)
+                expert_out = self._apply_expert_casted(eid, hidden[b], out_dtype=out_dtype)
+                delta[b] = delta[b] + w * expert_out
         return delta
 
     def predict_logits(self, hidden: torch.Tensor) -> torch.Tensor:

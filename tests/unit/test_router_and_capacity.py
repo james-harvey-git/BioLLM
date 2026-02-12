@@ -43,3 +43,15 @@ def test_saturated_expert_gets_penalized() -> None:
     _, routing = moe(hidden)
     probs = routing.router_probs[0]
     assert probs[0] < probs[1]
+
+
+def test_apply_selected_handles_mixed_hidden_expert_dtypes() -> None:
+    torch.manual_seed(3)
+    moe = HippocampalMoE(hidden_size=8, vocab_size=16, num_experts=3, expert_hidden=8, top_k=1)
+    # Experts remain float32 by default.
+    hidden = torch.randn(2, 4, 8, dtype=torch.float16)
+    expert_ids = torch.tensor([[0], [2]], dtype=torch.long)
+    delta = moe.apply_selected(hidden, expert_ids)
+
+    assert delta.shape == hidden.shape
+    assert delta.dtype == hidden.dtype
