@@ -91,6 +91,8 @@ uv run python scripts/run_qwen_instruction_12gb.py \
   --project=biollm-cls
 ```
 
+This launcher uses `bf16` + softer fast updates by default for stability on 12GB cards.
+
 Equivalent raw override command:
 
 ```bash

@@ -30,6 +30,8 @@ def main() -> int:
     parser.add_argument("--device", default="cuda", help="Hydra device override")
     parser.add_argument("--train-preset", default="qwen_0_5b_12gb", help="Hydra train preset")
     parser.add_argument("--hf-model", default="Qwen/Qwen2.5-0.5B-Instruct", help="HF model name")
+    parser.add_argument("--model-dtype", default="bf16", choices=["bf16", "fp16", "fp32"], help="HF model dtype")
+    parser.add_argument("--amp-dtype", default="bf16", choices=["bf16", "fp16"], help="AMP dtype")
     parser.add_argument("--vocab-size", type=int, default=16384, help="Active vocab cap for runtime")
     parser.add_argument("--prompt-field", default="instruction", help="Prompt field in dataset")
     parser.add_argument("--response-field", default="output", help="Response field in dataset")
@@ -43,6 +45,8 @@ def main() -> int:
     parser.add_argument("--eval-interval", type=int, default=None, help="Optional train.eval_interval override")
     parser.add_argument("--replay-batch-size", type=int, default=8, help="Replay batch size")
     parser.add_argument("--num-experts", type=int, default=8, help="Number of experts")
+    parser.add_argument("--fast-lr", type=float, default=3e-4, help="Fast expert/router learning rate")
+    parser.add_argument("--reward-alpha", type=float, default=0.2, help="Reward modulation alpha")
     parser.add_argument("--min-sleep-steps", type=int, default=1, help="Minimum sleep steps")
     parser.add_argument("--max-sleep-steps", type=int, default=4, help="Maximum sleep steps")
     parser.add_argument("--enforce-full-vocab", action="store_true", help="Enable strict tokenizer-vocab enforcement")
@@ -72,7 +76,8 @@ def main() -> int:
         f"train={args.train_preset}",
         "model=hf_causal_lm",
         f"model.hf_model_name={args.hf_model}",
-        "model.hf_torch_dtype=fp16",
+        f"model.hf_torch_dtype={args.model_dtype}",
+        f"train.amp_dtype={args.amp_dtype}",
         f"model.vocab_size={args.vocab_size}",
         "benchmark=instruction",
         f"benchmark.local_path={local_path.resolve().as_posix()}",
@@ -82,6 +87,8 @@ def main() -> int:
         f"benchmark.enforce_full_vocab={'true' if args.enforce_full_vocab else 'false'}",
         f"replay.batch_size={args.replay_batch_size}",
         f"experts.num_experts={args.num_experts}",
+        f"experts.fast_lr={args.fast_lr}",
+        f"experts.reward_alpha={args.reward_alpha}",
         f"consolidation.min_sleep_steps={args.min_sleep_steps}",
         f"consolidation.max_sleep_steps={args.max_sleep_steps}",
         f"logging.wandb_project={args.project}",

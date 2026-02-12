@@ -121,6 +121,9 @@ uv run python scripts/run_qwen_instruction_12gb.py \
   --project=biollm-cls
 ```
 
+The launcher defaults to `bf16` and a reduced fast LR for stability.  
+Forcing lower precision (`fp16`) or quantized training generally increases instability in this loop.
+
 Equivalent raw override command:
 
 ```bash
