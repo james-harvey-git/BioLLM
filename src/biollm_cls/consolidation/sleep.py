@@ -25,9 +25,15 @@ class Consolidator:
     amp_dtype: torch.dtype = torch.float16
     grad_scaler: torch.cuda.amp.GradScaler | None = None
 
+    @staticmethod
+    def _sanitize_logits(logits: torch.Tensor, clamp: float = 30.0) -> torch.Tensor:
+        return torch.nan_to_num(logits.float(), nan=0.0, posinf=clamp, neginf=-clamp).clamp(-clamp, clamp)
+
     def _distill_loss(self, base_logits: torch.Tensor, teacher_logits: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        teacher_probs = torch.softmax(teacher_logits.float(), dim=-1)
-        base_log_probs = torch.log_softmax(base_logits, dim=-1)
+        teacher_safe = self._sanitize_logits(teacher_logits)
+        base_safe = self._sanitize_logits(base_logits)
+        teacher_probs = torch.softmax(teacher_safe, dim=-1)
+        base_log_probs = torch.log_softmax(base_safe, dim=-1)
         kl = F.kl_div(base_log_probs, teacher_probs, reduction="batchmean")
         ce = -(teacher_probs * base_log_probs).sum(dim=-1).mean()
         return 0.5 * (kl + ce), kl
@@ -65,9 +71,15 @@ class Consolidator:
             ):
                 base_logits = self.base_model.forward_base(input_ids)
             distill_loss, kl = self._distill_loss(base_logits, teacher_logits)
+            if not torch.isfinite(distill_loss):
+                continue
             self.ewc.update_fisher(self.base_model, distill_loss)
             ewc_pen = self.ewc.penalty(self.base_model)
+            if not torch.isfinite(ewc_pen):
+                continue
             total_loss = distill_loss + ewc_pen
+            if not torch.isfinite(total_loss):
+                continue
             if self.grad_scaler is not None and self.grad_scaler.is_enabled():
                 self.grad_scaler.scale(total_loss).backward()
                 self.grad_scaler.step(self.base_optimizer)

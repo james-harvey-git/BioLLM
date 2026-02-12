@@ -53,6 +53,10 @@ def _backward_step(
         optimizer.step()
 
 
+def _sanitize_logits(logits: torch.Tensor, clamp: float = 30.0) -> torch.Tensor:
+    return torch.nan_to_num(logits.float(), nan=0.0, posinf=clamp, neginf=-clamp).clamp(-clamp, clamp)
+
+
 def _optimizer_has_fp16_params(optimizer: torch.optim.Optimizer) -> bool:
     for group in optimizer.param_groups:
         for param in group.get("params", []):
@@ -272,7 +276,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 input_ids=input_ids[0].detach().cpu(),
                 target_ids=target_ids[0].detach().cpu(),
                 reward=float(reward),
-                teacher_logits=teacher_logits[0].detach().cpu().to(torch.float16),
+                teacher_logits=_sanitize_logits(teacher_logits[0].detach().cpu(), clamp=30.0).to(torch.float16),
                 expert_ids=routing.topk_indices[0].detach().cpu(),
                 router_probs=routing.router_probs[0].detach().cpu(),
                 step_id=step,
@@ -323,14 +327,10 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     enabled=amp_enabled,
                 ):
                     base_logits = model.forward_base(input_ids[:1])
-                teacher_probs = torch.softmax(teacher_logits[:1].float(), dim=-1)
-                base_teacher_kl = float(
-                    F.kl_div(
-                        torch.log_softmax(base_logits.float(), dim=-1),
-                        teacher_probs,
-                        reduction="batchmean",
-                    ).item()
-                )
+                teacher_probs = torch.softmax(_sanitize_logits(teacher_logits[:1], clamp=30.0), dim=-1)
+                base_log_probs = torch.log_softmax(_sanitize_logits(base_logits, clamp=30.0), dim=-1)
+                base_teacher_kl_t = F.kl_div(base_log_probs, teacher_probs, reduction="batchmean")
+                base_teacher_kl = float(base_teacher_kl_t.item()) if torch.isfinite(base_teacher_kl_t) else float("nan")
 
             perf_metrics = {}
             if device.type == "cuda":
