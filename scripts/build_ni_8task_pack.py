@@ -60,6 +60,39 @@ def _stable_task_shuffle(rows: list[Example], base_seed: int, task_name: str) ->
     return out
 
 
+def _load_dataset_split(
+    load_dataset_fn,
+    dataset_name: str,
+    dataset_config: str | None,
+    split: str,
+    verification_mode: str,
+):
+    def _call(mode: str):
+        if mode == "strict":
+            return load_dataset_fn(dataset_name, dataset_config, split=split)
+        if mode == "no_checks":
+            try:
+                return load_dataset_fn(dataset_name, dataset_config, split=split, verification_mode="no_checks")
+            except TypeError:
+                # Backward compatibility for older datasets versions.
+                return load_dataset_fn(dataset_name, dataset_config, split=split, ignore_verifications=True)
+        raise ValueError(f"Unsupported verification_mode: {mode}")
+
+    if verification_mode == "strict":
+        return _call("strict"), "strict"
+    if verification_mode == "no_checks":
+        return _call("no_checks"), "no_checks"
+
+    # auto mode: strict first, then fallback only for split-verification mismatch.
+    try:
+        return _call("strict"), "strict"
+    except Exception as exc:
+        exc_text = f"{type(exc).__name__}: {exc}"
+        if "ExpectedMoreSplitsError" not in exc_text:
+            raise
+        return _call("no_checks"), "no_checks"
+
+
 def build_pack(
     *,
     output_dir: Path,
@@ -71,6 +104,7 @@ def build_pack(
     min_usable_per_task: int,
     train_per_task: int,
     eval_per_task: int,
+    verification_mode: str = "auto",
 ) -> dict[str, Any]:
     try:
         import datasets
@@ -78,7 +112,13 @@ def build_pack(
     except Exception as exc:  # pragma: no cover
         raise RuntimeError("datasets package is required. Install deps with `uv sync`.") from exc
 
-    ds = load_dataset(dataset_name, dataset_config, split=split)
+    ds, verification_mode_used = _load_dataset_split(
+        load_dataset,
+        dataset_name=dataset_name,
+        dataset_config=dataset_config,
+        split=split,
+        verification_mode=verification_mode,
+    )
     grouped: dict[str, list[Example]] = defaultdict(list)
 
     for row in ds:
@@ -167,6 +207,7 @@ def build_pack(
             "dataset_fingerprint": getattr(ds, "_fingerprint", None),
             "builder_name": getattr(dataset_info, "builder_name", None),
             "dataset_size": len(ds),
+            "verification_mode_used": verification_mode_used,
         },
         "checksums": {
             "train_jsonl_sha256": _sha256_file(train_path),
@@ -189,6 +230,12 @@ def main() -> int:
     parser.add_argument("--min-usable-per-task", type=int, default=700)
     parser.add_argument("--train-per-task", type=int, default=500)
     parser.add_argument("--eval-per-task", type=int, default=200)
+    parser.add_argument(
+        "--verification-mode",
+        choices=["auto", "strict", "no_checks"],
+        default="auto",
+        help="Dataset split verification mode. 'auto' retries with no_checks on split-verification mismatch.",
+    )
     args = parser.parse_args()
 
     metadata = build_pack(
@@ -201,6 +248,7 @@ def main() -> int:
         min_usable_per_task=args.min_usable_per_task,
         train_per_task=args.train_per_task,
         eval_per_task=args.eval_per_task,
+        verification_mode=args.verification_mode,
     )
 
     print(json.dumps(metadata, indent=2))
