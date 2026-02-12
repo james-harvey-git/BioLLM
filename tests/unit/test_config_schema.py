@@ -46,6 +46,8 @@ def test_instruction_benchmark_preset_composes_and_validates() -> None:
     assert validated.benchmark.name == "instruction"
     assert validated.model.provider == "hf"
     assert validated.benchmark.eval_local_path is None
+    assert validated.model.hf_injection_fraction == 0.7
+    assert validated.model.hf_allow_legacy_injection_fallback is True
 
 
 def test_qwen_0_5b_12gb_train_preset_composes_and_validates() -> None:
@@ -73,3 +75,5 @@ def test_ni8_pilot_and_continual_preset_composes() -> None:
     assert validated.benchmark.eval_local_path == "data/ni8/eval.jsonl"
     assert validated.benchmark.task_selection_seed == 42
     assert validated.train.ablation_disable_hippocampus is False
+    assert validated.consolidation.pseudo_ratio == 0.25
+    assert validated.consolidation.fisher_use_capability_mix is True

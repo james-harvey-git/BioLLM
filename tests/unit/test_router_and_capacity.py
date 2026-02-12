@@ -55,3 +55,15 @@ def test_apply_selected_handles_mixed_hidden_expert_dtypes() -> None:
 
     assert delta.shape == hidden.shape
     assert delta.dtype == hidden.dtype
+
+
+def test_forward_track_stats_false_does_not_update_activation_counts() -> None:
+    torch.manual_seed(4)
+    moe = HippocampalMoE(hidden_size=8, vocab_size=16, num_experts=4, expert_hidden=8, top_k=2)
+    hidden = torch.randn(3, 5, 8)
+
+    before = moe.activation_counts.detach().clone()
+    _delta, _routing = moe(hidden, track_stats=False)
+    after = moe.activation_counts.detach().clone()
+
+    assert torch.allclose(before, after)

@@ -31,6 +31,27 @@ def _make_components() -> tuple[TinyCausalTransformer, HippocampalMoE, Reservoir
     return model, moe, replay, ewc, optimizer
 
 
+def _populate_replay(model: TinyCausalTransformer, moe: HippocampalMoE, replay: ReservoirReplayBuffer, n: int = 16) -> None:
+    for i in range(n):
+        input_ids = torch.randint(0, 32, (8,), dtype=torch.long)
+        target_ids = torch.randint(0, 32, (8,), dtype=torch.long)
+        with torch.no_grad():
+            hidden = model.forward_to_injection(input_ids.unsqueeze(0))
+            delta, routing = moe(hidden)
+            teacher_logits = model.forward_from_injection(hidden + delta)[0]
+        replay.add(
+            Episode(
+                input_ids=input_ids,
+                target_ids=target_ids,
+                reward=0.0,
+                teacher_logits=teacher_logits.detach().cpu(),
+                expert_ids=routing.topk_indices[0].detach().cpu(),
+                router_probs=routing.router_probs[0].detach().cpu(),
+                step_id=i,
+            )
+        )
+
+
 def test_sleep_cycle_handles_non_finite_teacher_logits() -> None:
     model, moe, replay, ewc, optimizer = _make_components()
 
@@ -71,28 +92,12 @@ def test_sleep_cycle_handles_non_finite_teacher_logits() -> None:
 def test_sleep_distillation_reduces_base_teacher_kl_on_replay_subset() -> None:
     torch.manual_seed(12)
     model, moe, replay, ewc, optimizer = _make_components()
+    ewc.lambda_ = 0.0
 
-    for i in range(16):
-        input_ids = torch.randint(0, 32, (8,), dtype=torch.long)
-        target_ids = torch.randint(0, 32, (8,), dtype=torch.long)
-        with torch.no_grad():
-            hidden = model.forward_to_injection(input_ids.unsqueeze(0))
-            delta, routing = moe(hidden)
-            teacher_logits = model.forward_from_injection(hidden + delta)[0]
-        replay.add(
-            Episode(
-                input_ids=input_ids,
-                target_ids=target_ids,
-                reward=0.0,
-                teacher_logits=teacher_logits.detach().cpu(),
-                expert_ids=routing.topk_indices[0].detach().cpu(),
-                router_probs=routing.router_probs[0].detach().cpu(),
-                step_id=i,
-            )
-        )
+    _populate_replay(model, moe, replay, n=16)
+    eval_batch = replay.sample_uniform(8)
 
-    def _mean_kl() -> float:
-        batch = replay.sample_uniform(8)
+    def _mean_kl(batch: list[Episode]) -> float:
         inputs = torch.stack([ep.input_ids for ep in batch], dim=0)
         teacher_logits = torch.stack([ep.teacher_logits for ep in batch], dim=0)
         with torch.no_grad():
@@ -104,7 +109,7 @@ def test_sleep_distillation_reduces_base_teacher_kl_on_replay_subset() -> None:
             )
         return float(kl.item())
 
-    before = _mean_kl()
+    before = _mean_kl(eval_batch)
     consolidator = Consolidator(
         base_model=model,
         hippocampus=moe,
@@ -117,7 +122,62 @@ def test_sleep_distillation_reduces_base_teacher_kl_on_replay_subset() -> None:
         grad_scaler=None,
     )
     metrics = consolidator.run_sleep_cycle(steps=20)
-    after = _mean_kl()
+    after = _mean_kl(eval_batch)
 
     assert metrics["steps"] > 0
     assert after <= before + 1e-6
+
+
+def test_sleep_pseudo_rehearsal_generates_mixed_batch_without_stats_pollution() -> None:
+    torch.manual_seed(17)
+    model, moe, replay, ewc, optimizer = _make_components()
+    _populate_replay(model, moe, replay, n=20)
+
+    before_counts = moe.activation_counts.detach().clone()
+    consolidator = Consolidator(
+        base_model=model,
+        hippocampus=moe,
+        replay_buffer=replay,
+        ewc=ewc,
+        base_optimizer=optimizer,
+        device=torch.device("cpu"),
+        replay_batch_size=8,
+        pseudo_rehearsal=True,
+        pseudo_ratio=0.25,
+        fisher_use_capability_mix=True,
+        amp_enabled=False,
+        grad_scaler=None,
+    )
+    metrics = consolidator.run_sleep_cycle(steps=4)
+
+    assert metrics["steps"] > 0
+    assert float(metrics["pseudo_batch_size"]) > 0.0
+    assert float(metrics["sleep_mix_ratio_pseudo"]) > 0.0
+    assert float(metrics["fisher_pseudo_samples"]) > 0.0
+    assert metrics["fisher_source_mode"] == "mixed_replay_pseudo"
+    assert torch.allclose(before_counts, moe.activation_counts)
+
+
+def test_sleep_fisher_replay_only_when_pseudo_disabled() -> None:
+    torch.manual_seed(19)
+    model, moe, replay, ewc, optimizer = _make_components()
+    _populate_replay(model, moe, replay, n=12)
+
+    consolidator = Consolidator(
+        base_model=model,
+        hippocampus=moe,
+        replay_buffer=replay,
+        ewc=ewc,
+        base_optimizer=optimizer,
+        device=torch.device("cpu"),
+        replay_batch_size=6,
+        pseudo_rehearsal=False,
+        fisher_use_capability_mix=True,
+        amp_enabled=False,
+        grad_scaler=None,
+    )
+    metrics = consolidator.run_sleep_cycle(steps=2)
+
+    assert metrics["steps"] > 0
+    assert float(metrics["fisher_pseudo_samples"]) == 0.0
+    assert metrics["fisher_source_mode"] == "replay_only"

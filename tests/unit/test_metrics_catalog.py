@@ -14,6 +14,9 @@ def test_training_metric_glossary_contains_core_keys() -> None:
     for required in [
         "task_loss",
         "old_task_loss",
+        "replay_added_this_step",
+        "pseudo_batch_size",
+        "fisher_source_mode",
         "seen_acc_avg",
         "forgetting",
         "final_seen_acc_avg",
