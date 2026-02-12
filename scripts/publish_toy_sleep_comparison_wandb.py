@@ -50,6 +50,13 @@ def _as_float(value, default: float = 0.0) -> float:
         return default
 
 
+def _col_name(df, candidates: list[str]) -> str | None:
+    for name in candidates:
+        if name in df.columns:
+            return name
+    return None
+
+
 def collect_toy_ablation_runs(entity: str, project: str, group: str | None) -> list[RunStats]:
     api = wandb.Api()
     runs = api.runs(f"{entity}/{project}")
@@ -68,7 +75,17 @@ def collect_toy_ablation_runs(entity: str, project: str, group: str | None) -> l
             continue
 
         hist = run.history(
-            keys=["step", "forgetting_index", "old_task_loss", "task_loss", "sleep_count"],
+            keys=[
+                "step",
+                "forgetting_index",
+                "old_task_loss",
+                "task_loss",
+                "sleep_count",
+                "core/forgetting_index",
+                "core/old_task_loss",
+                "core/task_loss",
+                "core/sleep_count",
+            ],
             pandas=True,
         )
         if hist is None or hist.empty:
@@ -76,6 +93,13 @@ def collect_toy_ablation_runs(entity: str, project: str, group: str | None) -> l
 
         hist = hist.sort_values("step")
         final = hist.iloc[-1]
+        forgetting_col = _col_name(hist, ["forgetting_index", "core/forgetting_index"])
+        old_loss_col = _col_name(hist, ["old_task_loss", "core/old_task_loss"])
+        task_loss_col = _col_name(hist, ["task_loss", "core/task_loss"])
+        sleep_col = _col_name(hist, ["sleep_count", "core/sleep_count"])
+
+        if forgetting_col is None or old_loss_col is None or task_loss_col is None or sleep_col is None:
+            continue
 
         out.append(
             RunStats(
@@ -84,12 +108,12 @@ def collect_toy_ablation_runs(entity: str, project: str, group: str | None) -> l
                 mode=mode,
                 seed=seed,
                 steps=int(final["step"]),
-                final_forgetting=_as_float(final.get("forgetting_index", 0.0)),
-                mean_forgetting=_as_float(hist["forgetting_index"].mean()),
-                final_old_task_loss=_as_float(final.get("old_task_loss", 0.0)),
-                mean_old_task_loss=_as_float(hist["old_task_loss"].mean()),
-                final_task_loss=_as_float(final.get("task_loss", 0.0)),
-                max_sleep_count=_as_float(hist["sleep_count"].max()),
+                final_forgetting=_as_float(final.get(forgetting_col, 0.0)),
+                mean_forgetting=_as_float(hist[forgetting_col].mean()),
+                final_old_task_loss=_as_float(final.get(old_loss_col, 0.0)),
+                mean_old_task_loss=_as_float(hist[old_loss_col].mean()),
+                final_task_loss=_as_float(final.get(task_loss_col, 0.0)),
+                max_sleep_count=_as_float(hist[sleep_col].max()),
             )
         )
 

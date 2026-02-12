@@ -48,6 +48,13 @@ def _as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _first_present(row: dict[str, Any], keys: list[str], default: Any = None) -> Any:
+    for key in keys:
+        if key in row and row[key] is not None:
+            return row[key]
+    return default
+
+
 def _write_csv(path: Path, rows: list[dict[str, Any]], columns: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as fp:
@@ -113,9 +120,10 @@ def _collect(
         )
 
         for row in run.scan_history():
-            if row.get("boundary_index") is None:
+            boundary_index_value = _first_present(row, ["boundary_index", "boundary/boundary_index"])
+            if boundary_index_value is None:
                 continue
-            boundary_index = int(_as_float(row.get("boundary_index", 0.0)))
+            boundary_index = int(_as_float(boundary_index_value))
             boundary_rows.append(
                 {
                     "run_id": run.id,
@@ -124,12 +132,14 @@ def _collect(
                     "seed": seed,
                     "step": int(_as_float(row.get("step", 0.0))),
                     "boundary_index": boundary_index,
-                    "boundary_step": int(_as_float(row.get("boundary_step", 0.0))),
-                    "seen_acc_avg": _as_float(row.get("seen_acc_avg", 0.0)),
-                    "seen_loss_avg": _as_float(row.get("seen_loss_avg", 0.0)),
-                    "forgetting": _as_float(row.get("forgetting", 0.0)),
-                    "bwt": _as_float(row.get("bwt", 0.0)),
-                    "tasks_completed": _as_float(row.get("tasks_completed", 0.0)),
+                    "boundary_step": int(
+                        _as_float(_first_present(row, ["boundary_step", "boundary/boundary_step"], 0.0))
+                    ),
+                    "seen_acc_avg": _as_float(_first_present(row, ["seen_acc_avg", "core/seen_acc_avg"], 0.0)),
+                    "seen_loss_avg": _as_float(_first_present(row, ["seen_loss_avg", "core/seen_loss_avg"], 0.0)),
+                    "forgetting": _as_float(_first_present(row, ["forgetting", "core/forgetting"], 0.0)),
+                    "bwt": _as_float(_first_present(row, ["bwt", "core/bwt"], 0.0)),
+                    "tasks_completed": _as_float(_first_present(row, ["tasks_completed", "core/tasks_completed"], 0.0)),
                 }
             )
 
