@@ -1,0 +1,320 @@
+{"instruction": "Count words in this phrase: signal memory neuron neuron expert consolidation router buffer capacity pattern", "output": "10", "task": "word_count"}
+{"instruction": "Compute exactly: 857 + 729 - 667", "output": "919", "task": "arithmetic"}
+{"instruction": "How many vowels are in: novelty reward plasticity novelty neuron", "output": "12", "task": "vowel_count"}
+{"instruction": "How many vowels are in: novelty expert neuron prediction", "output": "11", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 703 677 526 595 775", "output": "526 595 677 703 775", "task": "sort"}
+{"instruction": "Convert to UPPERCASE: plasticity sequence memory consolidation sleep", "output": "PLASTICITY SEQUENCE MEMORY CONSOLIDATION SLEEP", "task": "uppercase"}
+{"instruction": "Is 574 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Compute exactly: 852 + 828 - 801", "output": "879", "task": "arithmetic"}
+{"instruction": "Sort numbers ascending: 549 582 762 753 565", "output": "549 565 582 753 762", "task": "sort"}
+{"instruction": "Compute exactly: 630 + 554 - 882", "output": "302", "task": "arithmetic"}
+{"instruction": "Convert to UPPERCASE: consolidation context", "output": "CONSOLIDATION CONTEXT", "task": "uppercase"}
+{"instruction": "Count words in this phrase: plasticity signal capacity expert expert pattern context novelty", "output": "8", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: capacity signal prediction capacity sequence", "output": "CAPACITY SIGNAL PREDICTION CAPACITY SEQUENCE", "task": "uppercase"}
+{"instruction": "Count words in this phrase: signal consolidation plasticity pattern sleep", "output": "5", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: sleep capacity reward cortex neuron", "output": "SLEEP CAPACITY REWARD CORTEX NEURON", "task": "uppercase"}
+{"instruction": "Sort numbers ascending: 736 689 843 857 549", "output": "549 689 736 843 857", "task": "sort"}
+{"instruction": "Compute exactly: 536 + 609 - 814", "output": "331", "task": "arithmetic"}
+{"instruction": "Convert to UPPERCASE: prediction context", "output": "PREDICTION CONTEXT", "task": "uppercase"}
+{"instruction": "Count words in this phrase: plasticity reward prediction pattern", "output": "4", "task": "word_count"}
+{"instruction": "Sort numbers ascending: 896 542 683 565 830", "output": "542 565 683 830 896", "task": "sort"}
+{"instruction": "Convert to UPPERCASE: neuron neuron neuron consolidation pattern", "output": "NEURON NEURON NEURON CONSOLIDATION PATTERN", "task": "uppercase"}
+{"instruction": "Convert to UPPERCASE: cortex gradient memory cortex", "output": "CORTEX GRADIENT MEMORY CORTEX", "task": "uppercase"}
+{"instruction": "Compute exactly: 596 + 601 - 812", "output": "385", "task": "arithmetic"}
+{"instruction": "Return only the last token in: novelty plasticity router", "output": "router", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 651 640 539 767 819", "output": "539 640 651 767 819", "task": "sort"}
+{"instruction": "Return only the last token in: consolidation buffer reward consolidation neuron sleep", "output": "sleep", "task": "last_token"}
+{"instruction": "How many vowels are in: context capacity gradient prediction buffer buffer sleep gradient consolidation", "output": "27", "task": "vowel_count"}
+{"instruction": "Count words in this phrase: expert pattern sleep prediction token neuron signal", "output": "7", "task": "word_count"}
+{"instruction": "Reverse string: item692", "output": "296meti", "task": "reverse"}
+{"instruction": "How many vowels are in: prediction plasticity sleep sleep expert consolidation plasticity", "output": "22", "task": "vowel_count"}
+{"instruction": "Return only the last token in: hippocampus buffer sleep", "output": "sleep", "task": "last_token"}
+{"instruction": "Reverse string: item692", "output": "296meti", "task": "reverse"}
+{"instruction": "How many vowels are in: novelty neuron token buffer", "output": "9", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 870 669 669 770 840", "output": "669 669 770 840 870", "task": "sort"}
+{"instruction": "Is 681 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Is 852 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Return only the last token in: router signal pattern", "output": "pattern", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 753 898 873 685 866", "output": "685 753 866 873 898", "task": "sort"}
+{"instruction": "How many vowels are in: router sequence plasticity pattern memory plasticity sleep context neuron reward pattern", "output": "28", "task": "vowel_count"}
+{"instruction": "Count words in this phrase: context neuron reward pattern buffer cortex signal", "output": "7", "task": "word_count"}
+{"instruction": "Sort numbers ascending: 842 619 653 613 676", "output": "613 619 653 676 842", "task": "sort"}
+{"instruction": "Sort numbers ascending: 657 555 853 774 717", "output": "555 657 717 774 853", "task": "sort"}
+{"instruction": "Return only the last token in: novelty hippocampus hippocampus memory", "output": "memory", "task": "last_token"}
+{"instruction": "Reverse string: item572", "output": "275meti", "task": "reverse"}
+{"instruction": "Is 713 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Return only the last token in: signal pattern prediction capacity novelty", "output": "novelty", "task": "last_token"}
+{"instruction": "Is 841 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Compute exactly: 512 + 830 - 555", "output": "787", "task": "arithmetic"}
+{"instruction": "Count words in this phrase: novelty pattern memory memory", "output": "4", "task": "word_count"}
+{"instruction": "Sort numbers ascending: 519 646 856 890 573", "output": "519 573 646 856 890", "task": "sort"}
+{"instruction": "Return only the last token in: token signal memory", "output": "memory", "task": "last_token"}
+{"instruction": "How many vowels are in: expert context buffer signal", "output": "8", "task": "vowel_count"}
+{"instruction": "Is 661 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Sort numbers ascending: 722 521 742 712 808", "output": "521 712 722 742 808", "task": "sort"}
+{"instruction": "Is 777 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Sort numbers ascending: 536 782 839 558 652", "output": "536 558 652 782 839", "task": "sort"}
+{"instruction": "Count words in this phrase: buffer capacity token buffer sleep", "output": "5", "task": "word_count"}
+{"instruction": "Is 835 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "How many vowels are in: cortex neuron expert consolidation", "output": "13", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 549 513 512 779 813", "output": "512 513 549 779 813", "task": "sort"}
+{"instruction": "Compute exactly: 803 + 650 - 769", "output": "684", "task": "arithmetic"}
+{"instruction": "Convert to UPPERCASE: sequence prediction pattern router", "output": "SEQUENCE PREDICTION PATTERN ROUTER", "task": "uppercase"}
+{"instruction": "Compute exactly: 614 + 505 - 873", "output": "246", "task": "arithmetic"}
+{"instruction": "Compute exactly: 737 + 593 - 691", "output": "639", "task": "arithmetic"}
+{"instruction": "Sort numbers ascending: 733 674 697 544 864", "output": "544 674 697 733 864", "task": "sort"}
+{"instruction": "Convert to UPPERCASE: gradient hippocampus buffer reward router", "output": "GRADIENT HIPPOCAMPUS BUFFER REWARD ROUTER", "task": "uppercase"}
+{"instruction": "How many vowels are in: cortex pattern consolidation buffer hippocampus buffer prediction token token sequence", "output": "30", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 891 700 579 627 503", "output": "503 579 627 700 891", "task": "sort"}
+{"instruction": "How many vowels are in: gradient router neuron cortex router pattern capacity capacity", "output": "22", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: gradient reward", "output": "GRADIENT REWARD", "task": "uppercase"}
+{"instruction": "Return only the last token in: sequence novelty token", "output": "token", "task": "last_token"}
+{"instruction": "How many vowels are in: token plasticity sequence buffer signal gradient gradient consolidation memory sequence context", "output": "33", "task": "vowel_count"}
+{"instruction": "How many vowels are in: gradient cortex novelty hippocampus novelty novelty buffer signal router expert", "output": "24", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: sleep gradient consolidation pattern", "output": "SLEEP GRADIENT CONSOLIDATION PATTERN", "task": "uppercase"}
+{"instruction": "Reverse string: item612", "output": "216meti", "task": "reverse"}
+{"instruction": "How many vowels are in: reward sleep cortex signal", "output": "8", "task": "vowel_count"}
+{"instruction": "Reverse string: item818", "output": "818meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: expert neuron buffer router pattern cortex gradient token memory", "output": "9", "task": "word_count"}
+{"instruction": "Sort numbers ascending: 732 806 755 811 509", "output": "509 732 755 806 811", "task": "sort"}
+{"instruction": "Count words in this phrase: sleep reward cortex router", "output": "4", "task": "word_count"}
+{"instruction": "Reverse string: item621", "output": "126meti", "task": "reverse"}
+{"instruction": "Return only the last token in: memory reward cortex expert sequence context", "output": "context", "task": "last_token"}
+{"instruction": "How many vowels are in: consolidation memory pattern plasticity sequence sleep capacity", "output": "22", "task": "vowel_count"}
+{"instruction": "Reverse string: item633", "output": "336meti", "task": "reverse"}
+{"instruction": "How many vowels are in: reward consolidation cortex signal memory memory", "output": "16", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 591 596 861 877 526", "output": "526 591 596 861 877", "task": "sort"}
+{"instruction": "Is 823 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Is 528 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Reverse string: item563", "output": "365meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: plasticity sequence sequence signal", "output": "4", "task": "word_count"}
+{"instruction": "Count words in this phrase: buffer token consolidation memory", "output": "4", "task": "word_count"}
+{"instruction": "Compute exactly: 726 + 855 - 636", "output": "945", "task": "arithmetic"}
+{"instruction": "How many vowels are in: plasticity context cortex neuron", "output": "10", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: plasticity sequence", "output": "PLASTICITY SEQUENCE", "task": "uppercase"}
+{"instruction": "Convert to UPPERCASE: novelty prediction memory pattern", "output": "NOVELTY PREDICTION MEMORY PATTERN", "task": "uppercase"}
+{"instruction": "Sort numbers ascending: 676 634 612 566 729", "output": "566 612 634 676 729", "task": "sort"}
+{"instruction": "How many vowels are in: consolidation sequence neuron token buffer memory buffer sleep cortex neuron consolidation", "output": "34", "task": "vowel_count"}
+{"instruction": "Is 761 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Count words in this phrase: hippocampus token memory novelty expert cortex sleep token sleep token cortex cortex", "output": "12", "task": "word_count"}
+{"instruction": "Return only the last token in: hippocampus prediction router expert", "output": "expert", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 552 799 834 832 847", "output": "552 799 832 834 847", "task": "sort"}
+{"instruction": "Sort numbers ascending: 531 548 818 734 831", "output": "531 548 734 818 831", "task": "sort"}
+{"instruction": "Is 695 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Count words in this phrase: reward memory signal memory cortex cortex consolidation", "output": "7", "task": "word_count"}
+{"instruction": "Return only the last token in: memory signal novelty router router", "output": "router", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 517 547 867 605 844", "output": "517 547 605 844 867", "task": "sort"}
+{"instruction": "Reverse string: item568", "output": "865meti", "task": "reverse"}
+{"instruction": "How many vowels are in: signal buffer reward hippocampus plasticity reward token memory", "output": "19", "task": "vowel_count"}
+{"instruction": "Compute exactly: 759 + 866 - 864", "output": "761", "task": "arithmetic"}
+{"instruction": "Compute exactly: 606 + 743 - 827", "output": "522", "task": "arithmetic"}
+{"instruction": "Compute exactly: 826 + 524 - 592", "output": "758", "task": "arithmetic"}
+{"instruction": "How many vowels are in: router cortex signal consolidation", "output": "13", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 529 554 563 692 578", "output": "529 554 563 578 692", "task": "sort"}
+{"instruction": "Is 801 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Count words in this phrase: gradient memory sleep router cortex", "output": "5", "task": "word_count"}
+{"instruction": "Reverse string: item776", "output": "677meti", "task": "reverse"}
+{"instruction": "Reverse string: item559", "output": "955meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: novelty token token prediction context prediction cortex neuron context context", "output": "10", "task": "word_count"}
+{"instruction": "Is 837 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Sort numbers ascending: 615 531 734 756 531", "output": "531 531 615 734 756", "task": "sort"}
+{"instruction": "Reverse string: item639", "output": "936meti", "task": "reverse"}
+{"instruction": "Compute exactly: 686 + 551 - 698", "output": "539", "task": "arithmetic"}
+{"instruction": "Reverse string: item789", "output": "987meti", "task": "reverse"}
+{"instruction": "Sort numbers ascending: 899 663 525 802 637", "output": "525 637 663 802 899", "task": "sort"}
+{"instruction": "Sort numbers ascending: 763 721 795 690 819", "output": "690 721 763 795 819", "task": "sort"}
+{"instruction": "Count words in this phrase: sleep plasticity plasticity expert", "output": "4", "task": "word_count"}
+{"instruction": "Sort numbers ascending: 858 724 585 564 541", "output": "541 564 585 724 858", "task": "sort"}
+{"instruction": "Reverse string: item668", "output": "866meti", "task": "reverse"}
+{"instruction": "Compute exactly: 552 + 723 - 657", "output": "618", "task": "arithmetic"}
+{"instruction": "Count words in this phrase: capacity neuron novelty sequence expert memory consolidation hippocampus", "output": "8", "task": "word_count"}
+{"instruction": "Is 819 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Count words in this phrase: prediction gradient sequence neuron buffer novelty pattern buffer consolidation gradient prediction neuron", "output": "12", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: gradient reward", "output": "GRADIENT REWARD", "task": "uppercase"}
+{"instruction": "Is 794 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: router neuron plasticity novelty sleep", "output": "ROUTER NEURON PLASTICITY NOVELTY SLEEP", "task": "uppercase"}
+{"instruction": "Return only the last token in: token pattern router", "output": "router", "task": "last_token"}
+{"instruction": "Compute exactly: 631 + 586 - 748", "output": "469", "task": "arithmetic"}
+{"instruction": "Compute exactly: 578 + 810 - 881", "output": "507", "task": "arithmetic"}
+{"instruction": "Count words in this phrase: consolidation cortex capacity sequence sequence token prediction context plasticity", "output": "9", "task": "word_count"}
+{"instruction": "Count words in this phrase: gradient pattern token buffer novelty router token gradient context neuron", "output": "10", "task": "word_count"}
+{"instruction": "Compute exactly: 576 + 646 - 791", "output": "431", "task": "arithmetic"}
+{"instruction": "Return only the last token in: capacity router gradient memory router", "output": "router", "task": "last_token"}
+{"instruction": "Convert to UPPERCASE: pattern sleep router memory", "output": "PATTERN SLEEP ROUTER MEMORY", "task": "uppercase"}
+{"instruction": "Count words in this phrase: token pattern plasticity hippocampus reward", "output": "5", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: token neuron context", "output": "TOKEN NEURON CONTEXT", "task": "uppercase"}
+{"instruction": "How many vowels are in: signal context consolidation capacity sleep consolidation hippocampus reward buffer buffer context gradient", "output": "36", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 544 840 874 578 793", "output": "544 578 793 840 874", "task": "sort"}
+{"instruction": "Return only the last token in: novelty hippocampus context prediction", "output": "prediction", "task": "last_token"}
+{"instruction": "Compute exactly: 609 + 571 - 591", "output": "589", "task": "arithmetic"}
+{"instruction": "Return only the last token in: reward consolidation novelty plasticity", "output": "plasticity", "task": "last_token"}
+{"instruction": "Reverse string: item858", "output": "858meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: plasticity neuron token cortex reward", "output": "5", "task": "word_count"}
+{"instruction": "Count words in this phrase: signal cortex reward hippocampus memory novelty gradient buffer sleep sequence reward", "output": "11", "task": "word_count"}
+{"instruction": "Return only the last token in: hippocampus context prediction token capacity", "output": "capacity", "task": "last_token"}
+{"instruction": "Count words in this phrase: hippocampus neuron sequence capacity sleep", "output": "5", "task": "word_count"}
+{"instruction": "Return only the last token in: consolidation capacity token consolidation", "output": "consolidation", "task": "last_token"}
+{"instruction": "Compute exactly: 658 + 607 - 621", "output": "644", "task": "arithmetic"}
+{"instruction": "Compute exactly: 722 + 765 - 794", "output": "693", "task": "arithmetic"}
+{"instruction": "How many vowels are in: neuron token reward neuron prediction pattern", "output": "16", "task": "vowel_count"}
+{"instruction": "Is 636 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Return only the last token in: plasticity hippocampus consolidation consolidation", "output": "consolidation", "task": "last_token"}
+{"instruction": "How many vowels are in: gradient neuron consolidation prediction", "output": "16", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: prediction prediction hippocampus", "output": "PREDICTION PREDICTION HIPPOCAMPUS", "task": "uppercase"}
+{"instruction": "Return only the last token in: buffer plasticity plasticity", "output": "plasticity", "task": "last_token"}
+{"instruction": "Is 615 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Return only the last token in: sleep reward gradient", "output": "gradient", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 707 599 850 794 706", "output": "599 706 707 794 850", "task": "sort"}
+{"instruction": "Is 572 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "How many vowels are in: router novelty router token pattern prediction novelty expert sequence", "output": "24", "task": "vowel_count"}
+{"instruction": "Count words in this phrase: hippocampus token capacity novelty novelty buffer pattern novelty neuron hippocampus", "output": "10", "task": "word_count"}
+{"instruction": "Count words in this phrase: consolidation cortex router token sleep", "output": "5", "task": "word_count"}
+{"instruction": "Return only the last token in: signal expert consolidation signal novelty signal", "output": "signal", "task": "last_token"}
+{"instruction": "Reverse string: item602", "output": "206meti", "task": "reverse"}
+{"instruction": "Return only the last token in: context memory sleep context novelty capacity", "output": "capacity", "task": "last_token"}
+{"instruction": "Reverse string: item746", "output": "647meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: memory router prediction cortex gradient pattern buffer novelty token", "output": "9", "task": "word_count"}
+{"instruction": "Reverse string: item507", "output": "705meti", "task": "reverse"}
+{"instruction": "Convert to UPPERCASE: consolidation novelty neuron router", "output": "CONSOLIDATION NOVELTY NEURON ROUTER", "task": "uppercase"}
+{"instruction": "Return only the last token in: reward plasticity pattern signal sequence", "output": "sequence", "task": "last_token"}
+{"instruction": "Convert to UPPERCASE: neuron plasticity buffer neuron buffer", "output": "NEURON PLASTICITY BUFFER NEURON BUFFER", "task": "uppercase"}
+{"instruction": "Reverse string: item637", "output": "736meti", "task": "reverse"}
+{"instruction": "Compute exactly: 664 + 683 - 670", "output": "677", "task": "arithmetic"}
+{"instruction": "Convert to UPPERCASE: neuron cortex capacity", "output": "NEURON CORTEX CAPACITY", "task": "uppercase"}
+{"instruction": "Reverse string: item854", "output": "458meti", "task": "reverse"}
+{"instruction": "Is 550 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Return only the last token in: pattern sequence plasticity signal expert", "output": "expert", "task": "last_token"}
+{"instruction": "How many vowels are in: novelty gradient novelty novelty", "output": "9", "task": "vowel_count"}
+{"instruction": "Reverse string: item745", "output": "547meti", "task": "reverse"}
+{"instruction": "Return only the last token in: neuron token context", "output": "context", "task": "last_token"}
+{"instruction": "Convert to UPPERCASE: gradient capacity plasticity context pattern", "output": "GRADIENT CAPACITY PLASTICITY CONTEXT PATTERN", "task": "uppercase"}
+{"instruction": "How many vowels are in: sequence expert pattern neuron memory neuron", "output": "16", "task": "vowel_count"}
+{"instruction": "Count words in this phrase: sequence capacity sequence token gradient novelty", "output": "6", "task": "word_count"}
+{"instruction": "Is 675 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: plasticity cortex token", "output": "PLASTICITY CORTEX TOKEN", "task": "uppercase"}
+{"instruction": "Compute exactly: 873 + 764 - 530", "output": "1107", "task": "arithmetic"}
+{"instruction": "Reverse string: item522", "output": "225meti", "task": "reverse"}
+{"instruction": "How many vowels are in: plasticity gradient cortex capacity cortex memory token gradient pattern router router", "output": "28", "task": "vowel_count"}
+{"instruction": "Sort numbers ascending: 794 593 692 532 525", "output": "525 532 593 692 794", "task": "sort"}
+{"instruction": "Is 768 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: memory prediction", "output": "MEMORY PREDICTION", "task": "uppercase"}
+{"instruction": "How many vowels are in: sequence consolidation sequence cortex", "output": "16", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: sequence memory", "output": "SEQUENCE MEMORY", "task": "uppercase"}
+{"instruction": "Compute exactly: 894 + 834 - 618", "output": "1110", "task": "arithmetic"}
+{"instruction": "Compute exactly: 654 + 722 - 622", "output": "754", "task": "arithmetic"}
+{"instruction": "Reverse string: item577", "output": "775meti", "task": "reverse"}
+{"instruction": "How many vowels are in: plasticity capacity router sequence expert", "output": "15", "task": "vowel_count"}
+{"instruction": "Is 718 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: prediction expert prediction reward", "output": "PREDICTION EXPERT PREDICTION REWARD", "task": "uppercase"}
+{"instruction": "Is 594 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Sort numbers ascending: 761 757 758 557 796", "output": "557 757 758 761 796", "task": "sort"}
+{"instruction": "Return only the last token in: context sleep plasticity", "output": "plasticity", "task": "last_token"}
+{"instruction": "Compute exactly: 736 + 714 - 652", "output": "798", "task": "arithmetic"}
+{"instruction": "Reverse string: item858", "output": "858meti", "task": "reverse"}
+{"instruction": "Return only the last token in: gradient buffer expert", "output": "expert", "task": "last_token"}
+{"instruction": "Is 641 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Reverse string: item595", "output": "595meti", "task": "reverse"}
+{"instruction": "Return only the last token in: gradient gradient prediction pattern buffer buffer", "output": "buffer", "task": "last_token"}
+{"instruction": "How many vowels are in: pattern expert context gradient expert token prediction memory cortex token", "output": "23", "task": "vowel_count"}
+{"instruction": "Reverse string: item555", "output": "555meti", "task": "reverse"}
+{"instruction": "Sort numbers ascending: 554 563 564 876 508", "output": "508 554 563 564 876", "task": "sort"}
+{"instruction": "Convert to UPPERCASE: memory token novelty memory", "output": "MEMORY TOKEN NOVELTY MEMORY", "task": "uppercase"}
+{"instruction": "Is 509 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: hippocampus pattern plasticity consolidation", "output": "HIPPOCAMPUS PATTERN PLASTICITY CONSOLIDATION", "task": "uppercase"}
+{"instruction": "Sort numbers ascending: 688 872 595 844 809", "output": "595 688 809 844 872", "task": "sort"}
+{"instruction": "Reverse string: item673", "output": "376meti", "task": "reverse"}
+{"instruction": "Reverse string: item663", "output": "366meti", "task": "reverse"}
+{"instruction": "Reverse string: item717", "output": "717meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: pattern reward reward pattern reward context sleep consolidation pattern cortex", "output": "10", "task": "word_count"}
+{"instruction": "Compute exactly: 812 + 719 - 870", "output": "661", "task": "arithmetic"}
+{"instruction": "Count words in this phrase: gradient context hippocampus expert buffer neuron sleep plasticity pattern memory sleep prediction", "output": "12", "task": "word_count"}
+{"instruction": "Compute exactly: 755 + 571 - 558", "output": "768", "task": "arithmetic"}
+{"instruction": "Is 560 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Sort numbers ascending: 633 804 800 709 667", "output": "633 667 709 800 804", "task": "sort"}
+{"instruction": "Reverse string: item860", "output": "068meti", "task": "reverse"}
+{"instruction": "Is 732 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Reverse string: item546", "output": "645meti", "task": "reverse"}
+{"instruction": "Is 754 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Is 627 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Return only the last token in: memory router sleep neuron", "output": "neuron", "task": "last_token"}
+{"instruction": "Reverse string: item624", "output": "426meti", "task": "reverse"}
+{"instruction": "Is 524 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Count words in this phrase: cortex context buffer sequence expert cortex token gradient", "output": "8", "task": "word_count"}
+{"instruction": "Return only the last token in: reward cortex prediction", "output": "prediction", "task": "last_token"}
+{"instruction": "Is 884 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Count words in this phrase: novelty sleep cortex hippocampus hippocampus context gradient consolidation buffer plasticity memory", "output": "11", "task": "word_count"}
+{"instruction": "Is 548 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Count words in this phrase: pattern cortex signal memory neuron consolidation pattern router consolidation neuron signal", "output": "11", "task": "word_count"}
+{"instruction": "Count words in this phrase: sequence memory expert sleep signal consolidation prediction capacity hippocampus sequence buffer", "output": "11", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: context neuron signal sleep", "output": "CONTEXT NEURON SIGNAL SLEEP", "task": "uppercase"}
+{"instruction": "Reverse string: item831", "output": "138meti", "task": "reverse"}
+{"instruction": "Convert to UPPERCASE: signal cortex buffer plasticity token", "output": "SIGNAL CORTEX BUFFER PLASTICITY TOKEN", "task": "uppercase"}
+{"instruction": "Is 834 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "How many vowels are in: plasticity hippocampus pattern reward plasticity signal prediction capacity novelty buffer sequence", "output": "31", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: buffer memory cortex token consolidation", "output": "BUFFER MEMORY CORTEX TOKEN CONSOLIDATION", "task": "uppercase"}
+{"instruction": "Count words in this phrase: context expert reward capacity plasticity plasticity context gradient cortex pattern", "output": "10", "task": "word_count"}
+{"instruction": "Return only the last token in: token buffer context pattern", "output": "pattern", "task": "last_token"}
+{"instruction": "Convert to UPPERCASE: signal plasticity signal", "output": "SIGNAL PLASTICITY SIGNAL", "task": "uppercase"}
+{"instruction": "Sort numbers ascending: 596 897 610 696 699", "output": "596 610 696 699 897", "task": "sort"}
+{"instruction": "How many vowels are in: buffer capacity gradient context novelty sleep capacity", "output": "17", "task": "vowel_count"}
+{"instruction": "Return only the last token in: cortex plasticity context plasticity cortex reward", "output": "reward", "task": "last_token"}
+{"instruction": "Return only the last token in: neuron cortex token token memory signal", "output": "signal", "task": "last_token"}
+{"instruction": "Count words in this phrase: hippocampus novelty sequence signal memory", "output": "5", "task": "word_count"}
+{"instruction": "How many vowels are in: gradient token expert capacity sequence sleep buffer", "output": "18", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: plasticity consolidation cortex cortex hippocampus", "output": "PLASTICITY CONSOLIDATION CORTEX CORTEX HIPPOCAMPUS", "task": "uppercase"}
+{"instruction": "Return only the last token in: gradient pattern memory memory neuron", "output": "neuron", "task": "last_token"}
+{"instruction": "How many vowels are in: neuron novelty prediction gradient novelty", "output": "14", "task": "vowel_count"}
+{"instruction": "Compute exactly: 698 + 771 - 595", "output": "874", "task": "arithmetic"}
+{"instruction": "Convert to UPPERCASE: buffer memory pattern prediction pattern", "output": "BUFFER MEMORY PATTERN PREDICTION PATTERN", "task": "uppercase"}
+{"instruction": "Compute exactly: 842 + 727 - 653", "output": "916", "task": "arithmetic"}
+{"instruction": "Is 753 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Is 602 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Sort numbers ascending: 780 886 722 701 590", "output": "590 701 722 780 886", "task": "sort"}
+{"instruction": "Convert to UPPERCASE: pattern token sleep capacity", "output": "PATTERN TOKEN SLEEP CAPACITY", "task": "uppercase"}
+{"instruction": "How many vowels are in: token sequence hippocampus hippocampus capacity token sequence router sleep expert", "output": "30", "task": "vowel_count"}
+{"instruction": "Count words in this phrase: sleep neuron capacity neuron memory neuron gradient plasticity plasticity prediction consolidation", "output": "11", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: gradient expert sequence", "output": "GRADIENT EXPERT SEQUENCE", "task": "uppercase"}
+{"instruction": "How many vowels are in: neuron neuron novelty consolidation cortex expert sequence memory signal router", "output": "29", "task": "vowel_count"}
+{"instruction": "How many vowels are in: buffer prediction reward router sleep sequence buffer pattern sleep capacity sleep", "output": "28", "task": "vowel_count"}
+{"instruction": "Is 571 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Is 843 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Convert to UPPERCASE: memory consolidation expert", "output": "MEMORY CONSOLIDATION EXPERT", "task": "uppercase"}
+{"instruction": "Count words in this phrase: sleep capacity sequence reward", "output": "4", "task": "word_count"}
+{"instruction": "Return only the last token in: buffer novelty prediction sleep buffer", "output": "buffer", "task": "last_token"}
+{"instruction": "Convert to UPPERCASE: signal context sequence", "output": "SIGNAL CONTEXT SEQUENCE", "task": "uppercase"}
+{"instruction": "Compute exactly: 655 + 566 - 579", "output": "642", "task": "arithmetic"}
+{"instruction": "Return only the last token in: sleep sequence pattern sequence novelty buffer", "output": "buffer", "task": "last_token"}
+{"instruction": "Sort numbers ascending: 895 698 805 759 639", "output": "639 698 759 805 895", "task": "sort"}
+{"instruction": "Reverse string: item537", "output": "735meti", "task": "reverse"}
+{"instruction": "Count words in this phrase: consolidation sequence expert reward router gradient prediction novelty sequence", "output": "9", "task": "word_count"}
+{"instruction": "Convert to UPPERCASE: neuron novelty gradient", "output": "NEURON NOVELTY GRADIENT", "task": "uppercase"}
+{"instruction": "Compute exactly: 532 + 675 - 734", "output": "473", "task": "arithmetic"}
+{"instruction": "Is 726 odd or even? Reply with one word.", "output": "even", "task": "parity"}
+{"instruction": "Reverse string: item794", "output": "497meti", "task": "reverse"}
+{"instruction": "How many vowels are in: capacity neuron token neuron hippocampus", "output": "15", "task": "vowel_count"}
+{"instruction": "Return only the last token in: context capacity consolidation capacity", "output": "capacity", "task": "last_token"}
+{"instruction": "How many vowels are in: plasticity signal signal capacity gradient memory consolidation", "output": "21", "task": "vowel_count"}
+{"instruction": "How many vowels are in: signal hippocampus neuron neuron novelty cortex token expert cortex novelty", "output": "24", "task": "vowel_count"}
+{"instruction": "Convert to UPPERCASE: gradient hippocampus context token", "output": "GRADIENT HIPPOCAMPUS CONTEXT TOKEN", "task": "uppercase"}
+{"instruction": "Return only the last token in: sleep hippocampus prediction", "output": "prediction", "task": "last_token"}
+{"instruction": "Compute exactly: 597 + 633 - 755", "output": "475", "task": "arithmetic"}
+{"instruction": "Reverse string: item712", "output": "217meti", "task": "reverse"}
+{"instruction": "Compute exactly: 826 + 858 - 545", "output": "1139", "task": "arithmetic"}
+{"instruction": "Compute exactly: 858 + 827 - 871", "output": "814", "task": "arithmetic"}
+{"instruction": "Compute exactly: 763 + 685 - 568", "output": "880", "task": "arithmetic"}
+{"instruction": "Reverse string: item554", "output": "455meti", "task": "reverse"}
+{"instruction": "Sort numbers ascending: 796 531 595 531 584", "output": "531 531 584 595 796", "task": "sort"}
+{"instruction": "Return only the last token in: pattern pattern context novelty", "output": "novelty", "task": "last_token"}
+{"instruction": "Compute exactly: 780 + 749 - 781", "output": "748", "task": "arithmetic"}
+{"instruction": "Sort numbers ascending: 726 800 519 575 501", "output": "501 519 575 726 800", "task": "sort"}
+{"instruction": "Compute exactly: 756 + 887 - 630", "output": "1013", "task": "arithmetic"}
+{"instruction": "Compute exactly: 870 + 746 - 727", "output": "889", "task": "arithmetic"}
+{"instruction": "Compute exactly: 657 + 885 - 882", "output": "660", "task": "arithmetic"}
+{"instruction": "How many vowels are in: hippocampus buffer novelty sequence sleep", "output": "14", "task": "vowel_count"}
+{"instruction": "Is 703 odd or even? Reply with one word.", "output": "odd", "task": "parity"}
+{"instruction": "Sort numbers ascending: 895 899 672 560 867", "output": "560 672 867 895 899", "task": "sort"}
+{"instruction": "Sort numbers ascending: 772 755 632 886 859", "output": "632 755 772 859 886", "task": "sort"}
+{"instruction": "Reverse string: item660", "output": "066meti", "task": "reverse"}
+{"instruction": "Reverse string: item775", "output": "577meti", "task": "reverse"}
+{"instruction": "Reverse string: item602", "output": "206meti", "task": "reverse"}
+{"instruction": "Return only the last token in: prediction consolidation cortex signal novelty", "output": "novelty", "task": "last_token"}
