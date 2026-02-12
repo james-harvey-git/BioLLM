@@ -59,6 +59,24 @@ def _sanitize_logits(logits: torch.Tensor, clamp: float = 30.0) -> torch.Tensor:
     return torch.nan_to_num(logits.float(), nan=0.0, posinf=clamp, neginf=-clamp).clamp(-clamp, clamp)
 
 
+def _safe_token_ce(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    vocab_size: int,
+) -> tuple[torch.Tensor, int]:
+    mask = targets != -100
+    supervised_tokens = int(mask.sum().item())
+    if supervised_tokens <= 0:
+        # Keep graph connectivity with zero gradient contribution.
+        return logits.sum() * 0.0, 0
+    loss = F.cross_entropy(
+        logits.view(-1, vocab_size),
+        targets.view(-1),
+        ignore_index=-100,
+    )
+    return loss, supervised_tokens
+
+
 def _optimizer_has_fp16_params(optimizer: torch.optim.Optimizer) -> bool:
     for group in optimizer.param_groups:
         for param in group.get("params", []):
@@ -289,21 +307,13 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     )
                     augmented_hidden = hidden
                     fast_logits = model.forward_from_injection(augmented_hidden.detach() if not wake_base_enabled else augmented_hidden)
-                    fast_ce = F.cross_entropy(
-                        fast_logits.view(-1, runtime_vocab_size),
-                        target_ids.view(-1),
-                        ignore_index=-100,
-                    )
+                    fast_ce, batch_supervised_tokens = _safe_token_ce(fast_logits, target_ids, runtime_vocab_size)
                     fast_loss = fast_ce
                 else:
                     delta, routing = hippocampus(hidden.detach() if not wake_base_enabled else hidden)
                     augmented_hidden = hidden + delta
                     fast_logits = hippocampus.predict_logits(augmented_hidden)
-                    fast_ce = F.cross_entropy(
-                        fast_logits.view(-1, runtime_vocab_size),
-                        target_ids.view(-1),
-                        ignore_index=-100,
-                    )
+                    fast_ce, batch_supervised_tokens = _safe_token_ce(fast_logits, target_ids, runtime_vocab_size)
                     fast_loss = fast_ce + cfg.experts.routing_reg_weight * hippocampus.routing_regularizer()
 
             reward = 0.0
@@ -326,11 +336,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     enabled=amp_enabled,
                 ):
                     wake_logits = model.forward_from_injection(augmented_hidden)
-                    wake_loss = F.cross_entropy(
-                        wake_logits.view(-1, runtime_vocab_size),
-                        target_ids.view(-1),
-                        ignore_index=-100,
-                    )
+                    wake_loss, _ = _safe_token_ce(wake_logits, target_ids, runtime_vocab_size)
                 _backward_step(wake_loss * cfg.consolidation.wake_base_lr_scale, base_optimizer, base_scaler)
                 teacher_logits = wake_logits.detach()
             else:
@@ -416,6 +422,8 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
 
             core_metrics = {
                 "task_loss": float(fast_ce.item()),
+                "batch_supervised_tokens": float(batch_supervised_tokens),
+                "batch_supervised_fraction": float(batch_supervised_tokens / max(1, target_ids.numel())),
                 "old_task_loss": float(old_loss),
                 "forgetting_index": float(forgetting_signal),
                 "sleep_pressure": float(scheduler.current_pressure),

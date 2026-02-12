@@ -146,9 +146,14 @@ class ContinualInstructionBenchmark:
             if not train_rows or not heldout_rows:
                 continue
 
+            encoded_train = self._encode_rows(train_rows)
+            encoded_heldout = self._encode_rows(heldout_rows)
+            if not encoded_train or not encoded_heldout:
+                continue
+
             task_id = self.task_label_to_id[task_label]
-            self.train_by_task[task_id] = [self._encode(prompt, response) for prompt, response in train_rows]
-            self.heldout_by_task[task_id] = [self._encode(prompt, response) for prompt, response in heldout_rows]
+            self.train_by_task[task_id] = encoded_train
+            self.heldout_by_task[task_id] = encoded_heldout
 
         self.task_ids = sorted(self.train_by_task.keys())
         if not self.task_ids:
@@ -259,29 +264,57 @@ class ContinualInstructionBenchmark:
         text = re.sub(r"\s+", " ", text)
         return text.strip()
 
-    def _encode(self, prompt: str, response: str) -> EncodedExample:
+    def _encode_rows(self, rows: list[tuple[str, str]]) -> list[EncodedExample]:
+        out: list[EncodedExample] = []
+        for prompt, response in rows:
+            encoded = self._encode(prompt, response)
+            if encoded is not None:
+                out.append(encoded)
+        return out
+
+    def _encode(self, prompt: str, response: str) -> EncodedExample | None:
         prefix = self.prompt_template.format(prompt=prompt)
-        full_text = prefix + response
+        max_full_len = self.seq_len + 1
+        prefix_ids = self.tokenizer(prefix, add_special_tokens=True, truncation=False, max_length=1_000_000)["input_ids"]
+        response_ids = self.tokenizer(
+            response,
+            add_special_tokens=False,
+            truncation=False,
+            max_length=1_000_000,
+        )["input_ids"]
 
-        prefix_ids = self.tokenizer(prefix, add_special_tokens=True, truncation=True, max_length=self.seq_len + 1)[
-            "input_ids"
-        ]
-        full_ids = self.tokenizer(full_text, add_special_tokens=True, truncation=True, max_length=self.seq_len + 1)[
-            "input_ids"
-        ]
+        if not response_ids:
+            eos_id = self.tokenizer.eos_token_id
+            if eos_id is None:
+                eos_id = self.tokenizer.pad_token_id
+            response_ids = [int(eos_id)]
 
+        # Reserve space for response tokens so we always keep supervised signal.
+        reserved_response = min(len(response_ids), max(1, min(32, max_full_len // 4)))
+        prefix_budget = max(0, max_full_len - reserved_response)
+        prefix_kept = prefix_ids[:prefix_budget]
+        response_budget = max(1, max_full_len - len(prefix_kept))
+        response_kept = response_ids[:response_budget]
+        if not response_kept:
+            response_kept = response_ids[:1]
+            prefix_kept = prefix_kept[: max(0, max_full_len - 1)]
+
+        full_ids = prefix_kept + response_kept
         if len(full_ids) < 2:
             eos_id = self.tokenizer.eos_token_id
             if eos_id is None:
                 eos_id = self.tokenizer.pad_token_id
-            full_ids = [full_ids[0], eos_id]
+            if not full_ids:
+                full_ids = [int(eos_id), int(eos_id)]
+            else:
+                full_ids = [full_ids[0], int(eos_id)]
 
         input_ids = full_ids[:-1]
         target_ids = full_ids[1:]
 
-        prompt_len = max(0, min(len(prefix_ids), len(full_ids)) - 1)
+        prompt_len = max(0, len(prefix_kept) - 1)
         if self.ignore_prompt_loss and prompt_len > 0:
-            for i in range(prompt_len):
+            for i in range(min(prompt_len, len(target_ids))):
                 target_ids[i] = -100
 
         pad_id = int(self.tokenizer.pad_token_id)
@@ -301,6 +334,9 @@ class ContinualInstructionBenchmark:
         if self.runtime_vocab_size > 0:
             mask = target_tensor != -100
             target_tensor[mask] = target_tensor[mask] % self.runtime_vocab_size
+
+        if int((target_tensor != -100).sum().item()) <= 0:
+            return None
 
         return EncodedExample(input_ids=input_tensor, target_ids=target_tensor)
 

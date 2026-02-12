@@ -145,3 +145,39 @@ def test_evaluate_task_set_returns_expected_fields(tmp_path: Path, monkeypatch) 
         assert value.n_tokens >= 0
         assert 0.0 <= value.token_acc <= 1.0
         assert value.loss >= 0.0
+
+
+def test_encoding_reserves_supervised_tokens_for_long_prompts(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setitem(sys.modules, "transformers", _FakeTransformersModule())
+
+    data_path = tmp_path / "long_prompt.jsonl"
+    rows = []
+    very_long_prompt = " ".join(["prompt"] * 200)
+    for i in range(12):
+        rows.append(
+            {
+                "instruction": f"{very_long_prompt} {i}",
+                "output": "ok",
+                "task": "coverage_task",
+            }
+        )
+    _write_jsonl(data_path, rows)
+
+    benchmark = ContinualInstructionBenchmark(
+        seq_len=16,
+        batch_size=2,
+        runtime_vocab_size=64,
+        model_hf_name="fake-model",
+        local_path=str(data_path),
+        task_field="task",
+        num_tasks=1,
+        min_examples_per_task=2,
+        heldout_per_task=2,
+        enforce_full_vocab=False,
+    )
+
+    assert benchmark.task_ids
+    for split in (benchmark.train_by_task, benchmark.heldout_by_task):
+        for task_id in benchmark.task_ids:
+            for ex in split[task_id]:
+                assert int((ex.target_ids != -100).sum().item()) > 0

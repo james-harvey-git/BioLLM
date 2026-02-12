@@ -280,6 +280,22 @@ Numerical health metrics:
 - `first_non_finite_step`
   - First step index with non-finite metrics, or `-1` if none observed.
 
+Batch supervision coverage metrics:
+
+- `batch_supervised_tokens`
+  - Number of label positions in the current batch that are trainable (`target != -100`).
+
+- `batch_supervised_fraction`
+  - Ratio `batch_supervised_tokens / total_tokens_in_batch`.
+  - If this is near `0`, the wake loss signal is weak/degenerate.
+
+Per-task eval coverage (important for interpretation):
+
+- Coverage means how many valid supervised eval tokens each task contributes at boundary evaluation.
+- Tracked as `task_tokens/{task_id}` in boundary logs.
+- If a task has `task_tokens/{task_id} = 0`, then `task_acc/{task_id}` and `task_loss/{task_id}` are not meaningful for that task at that boundary.
+- Continual metrics are most reliable when all tasks have consistently non-zero eval token coverage.
+
 ## Weights & Biases (online/offline, artifacts, checkpoints)
 
 The trainer always writes local logs to `metrics.jsonl`.  

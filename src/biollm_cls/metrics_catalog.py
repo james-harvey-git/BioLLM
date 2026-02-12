@@ -41,6 +41,8 @@ def training_metric_glossary_rows() -> list[dict[str, str]]:
     docs = [
         MetricDoc("step", "global", "n/a", "step", "Global logging step."),
         MetricDoc("task_loss", "wake-step", "lower", "cross-entropy", "Fast-system next-token prediction loss on current batch."),
+        MetricDoc("batch_supervised_tokens", "wake-step", "higher", "count", "Number of non-ignored target tokens (`target != -100`) in current batch."),
+        MetricDoc("batch_supervised_fraction", "wake-step", "higher", "ratio", "Fraction of supervised tokens in current batch: supervised_tokens / total_tokens."),
         MetricDoc("old_task_loss", "wake-step", "lower", "cross-entropy", "Mean loss on held-out old tasks during periodic eval."),
         MetricDoc("forgetting_index", "wake-step", "lower", "loss delta", "Current old-task-loss minus best observed old-task-loss so far.", "max(0, old_task_loss - best_old_task_loss)"),
         MetricDoc("sleep_pressure", "wake-step", "lower", "score", "Scheduler pressure combining saturation, forgetting, and novelty."),
