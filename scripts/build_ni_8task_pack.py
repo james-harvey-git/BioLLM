@@ -60,6 +60,31 @@ def _stable_task_shuffle(rows: list[Example], base_seed: int, task_name: str) ->
     return out
 
 
+def _log(message: str, *, verbose: bool) -> None:
+    if verbose:
+        print(message, flush=True)
+
+
+def _row_iterator(ds, *, verbose: bool, progress_every: int):
+    total = len(ds) if hasattr(ds, "__len__") else None
+    try:
+        from tqdm.auto import tqdm  # type: ignore
+
+        yield from tqdm(ds, total=total, desc="Cleaning rows", unit="row")
+        return
+    except Exception:
+        pass
+
+    for idx, row in enumerate(ds, start=1):
+        if verbose and progress_every > 0 and idx % progress_every == 0:
+            if total is not None and total > 0:
+                pct = 100.0 * idx / total
+                _log(f"[build_ni_8task_pack] processed {idx}/{total} rows ({pct:.1f}%)", verbose=True)
+            else:
+                _log(f"[build_ni_8task_pack] processed {idx} rows", verbose=True)
+        yield row
+
+
 def _load_dataset_split(
     load_dataset_fn,
     dataset_name: str,
@@ -105,6 +130,8 @@ def build_pack(
     train_per_task: int,
     eval_per_task: int,
     verification_mode: str = "auto",
+    verbose: bool = True,
+    progress_every: int = 50_000,
 ) -> dict[str, Any]:
     try:
         import datasets
@@ -119,32 +146,56 @@ def build_pack(
         split=split,
         verification_mode=verification_mode,
     )
+    _log(
+        (
+            "[build_ni_8task_pack] loaded dataset "
+            f"{dataset_name} split={split} rows={len(ds)} verification_mode={verification_mode_used}"
+        ),
+        verbose=verbose,
+    )
     grouped: dict[str, list[Example]] = defaultdict(list)
 
-    for row in ds:
+    for row in _row_iterator(ds, verbose=verbose, progress_every=progress_every):
         task = _normalize_text(str(row.get("task_name", "")))
         instruction = _normalize_text(str(row.get("inputs", "")))
         output = _first_non_empty_target(row.get("targets"))
         if not task or not instruction or not output:
             continue
         grouped[task].append(Example(task=task, instruction=instruction, output=output))
+    _log(
+        f"[build_ni_8task_pack] cleaned rows into {len(grouped)} tasks (pre-filter)",
+        verbose=verbose,
+    )
 
     candidates = [task for task, rows in grouped.items() if len(rows) >= min_usable_per_task]
     if len(candidates) < num_tasks:
         raise ValueError(
             f"Only {len(candidates)} tasks have >= {min_usable_per_task} usable rows; need {num_tasks}."
         )
+    _log(
+        f"[build_ni_8task_pack] {len(candidates)} tasks passed min_usable_per_task={min_usable_per_task}",
+        verbose=verbose,
+    )
 
     candidates = sorted(candidates)
     rng = random.Random(task_selection_seed)
     rng.shuffle(candidates)
     selected_tasks = candidates[:num_tasks]
+    _log(f"[build_ni_8task_pack] selected {num_tasks} tasks with seed={task_selection_seed}", verbose=verbose)
 
     train_rows: list[dict[str, Any]] = []
     eval_rows: list[dict[str, Any]] = []
     per_task_counts: dict[str, dict[str, int]] = {}
 
-    for task in selected_tasks:
+    task_iterable = selected_tasks
+    try:
+        from tqdm.auto import tqdm  # type: ignore
+
+        task_iterable = tqdm(selected_tasks, desc="Building task splits", unit="task")
+    except Exception:
+        pass
+
+    for task in task_iterable:
         task_rows = _stable_task_shuffle(grouped[task], task_selection_seed, task)
         required = train_per_task + eval_per_task
         if len(task_rows) < required:
@@ -216,6 +267,13 @@ def build_pack(
         },
     }
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    _log(
+        (
+            "[build_ni_8task_pack] wrote outputs "
+            f"train={train_path} eval={eval_path} metadata={metadata_path}"
+        ),
+        verbose=verbose,
+    )
     return metadata
 
 
@@ -236,6 +294,13 @@ def main() -> int:
         default="auto",
         help="Dataset split verification mode. 'auto' retries with no_checks on split-verification mismatch.",
     )
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=50_000,
+        help="Fallback progress print interval when tqdm is unavailable.",
+    )
+    parser.add_argument("--quiet", action="store_true", help="Disable progress/log output.")
     args = parser.parse_args()
 
     metadata = build_pack(
@@ -249,6 +314,8 @@ def main() -> int:
         train_per_task=args.train_per_task,
         eval_per_task=args.eval_per_task,
         verification_mode=args.verification_mode,
+        verbose=not args.quiet,
+        progress_every=args.progress_every,
     )
 
     print(json.dumps(metadata, indent=2))
