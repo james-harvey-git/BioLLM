@@ -32,10 +32,14 @@ class ExpertRefresher:
         forced_ids = torch.full((input_ids.shape[0], 1), expert_id, device=device, dtype=torch.long)
 
         with torch.no_grad():
-            hidden = base_model.forward_to_injection(input_ids)
-            base_logits = base_model.forward_from_injection(hidden)
-            delta = hippocampus.apply_selected(hidden, forced_ids)
-            expert_logits = base_model.forward_from_injection(hidden + delta)
+            # Some neocortex adapters (HF split injection) consume a single cached
+            # injection context per forward_from_injection call.
+            hidden_base = base_model.forward_to_injection(input_ids)
+            base_logits = base_model.forward_from_injection(hidden_base)
+
+            hidden_expert = base_model.forward_to_injection(input_ids)
+            delta = hippocampus.apply_selected(hidden_expert, forced_ids)
+            expert_logits = base_model.forward_from_injection(hidden_expert + delta)
             kl = F.kl_div(
                 torch.log_softmax(base_logits, dim=-1),
                 torch.softmax(expert_logits, dim=-1),
