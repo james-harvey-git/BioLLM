@@ -13,3 +13,5 @@ hf_torch_dtype: auto
 hf_attn_implementation: null
 hf_gradient_checkpointing: false
 hf_local_files_only: false
+hf_injection_fraction: 0.7
+hf_allow_legacy_injection_fallback: true

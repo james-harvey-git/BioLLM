@@ -164,6 +164,8 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         device=device,
         replay_batch_size=cfg.replay.batch_size,
         pseudo_rehearsal=cfg.consolidation.pseudo_rehearsal,
+        pseudo_ratio=cfg.consolidation.pseudo_ratio,
+        fisher_use_capability_mix=cfg.consolidation.fisher_use_capability_mix,
         amp_enabled=amp_enabled,
         amp_dtype=amp_dtype,
         grad_scaler=base_scaler,
@@ -185,7 +187,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
     cl_metrics = ContinualMetricsTracker()
 
     config_dict = asdict(cfg)
-    config_dict["runtime"] = {
+    runtime_config = {
         "resolved_device": str(device),
         "amp_enabled": amp_enabled,
         "amp_dtype": cfg.train.amp_dtype,
@@ -194,6 +196,12 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
         "runtime_vocab_size": runtime_vocab_size,
         "model_provider": cfg.model.provider,
     }
+    if hasattr(model, "runtime_info") and callable(getattr(model, "runtime_info")):
+        try:
+            runtime_config.update(dict(model.runtime_info()))
+        except Exception:
+            pass
+    config_dict["runtime"] = runtime_config
     metric_glossary_rows = training_metric_glossary_rows()
     logger = MetricsLogger(
         output_dir=cfg.logging.output_dir,
@@ -223,6 +231,16 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
 
     if cfg.logging.wandb_watch_model:
         logger.watch(model, log_freq=cfg.logging.wandb_watch_log_freq)
+
+    hf_runtime_keys = (
+        "hf_injection_mode",
+        "hf_injection_layer_idx",
+        "hf_num_decoder_layers",
+        "hf_injection_fraction",
+    )
+    hf_runtime_payload = {k: runtime_config[k] for k in hf_runtime_keys if k in runtime_config}
+    if hf_runtime_payload:
+        logger.log(hf_runtime_payload, step=0)
 
     if cfg.repro.save_config_snapshot:
         save_run_metadata(Path(cfg.logging.output_dir), config_dict)
@@ -359,6 +377,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                     step_id=step,
                 )
                 replay.add(episode)
+            replay_added_this_step = int(input_ids.shape[0])
 
             if disable_hippocampus:
                 novelty_rate = 0.0
@@ -391,6 +410,12 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 "distill_kl": 0.0,
                 "ewc_penalty": 0.0,
                 "steps": 0.0,
+                "pseudo_batch_size": 0.0,
+                "replay_batch_size_sleep": 0.0,
+                "sleep_mix_ratio_pseudo": 0.0,
+                "fisher_replay_samples": 0.0,
+                "fisher_pseudo_samples": 0.0,
+                "fisher_source_mode": "replay_only",
             }
             refresh_metrics = {"refresh_count": 0.0, "refresh_avg_kl": 0.0}
             if not cfg.train.ablation_no_sleep and scheduler.should_sleep(step):
@@ -436,6 +461,12 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
                 "ewc_penalty": float(sleep_metrics["ewc_penalty"]),
                 "replay_size": float(len(replay)),
                 "fast_update_applied": float(fast_update_applied),
+                "replay_added_this_step": float(replay_added_this_step),
+                "pseudo_batch_size": float(sleep_metrics["pseudo_batch_size"]),
+                "replay_batch_size_sleep": float(sleep_metrics["replay_batch_size_sleep"]),
+                "sleep_mix_ratio_pseudo": float(sleep_metrics["sleep_mix_ratio_pseudo"]),
+                "fisher_replay_samples": float(sleep_metrics["fisher_replay_samples"]),
+                "fisher_pseudo_samples": float(sleep_metrics["fisher_pseudo_samples"]),
                 **perf_metrics,
             }
             cl_metrics.observe_step_metrics(step, core_metrics)
@@ -443,6 +474,7 @@ def run_training(cfg: CLSConfig) -> dict[str, float]:
             core_metrics["first_non_finite_step"] = float(
                 cl_metrics.first_non_finite_step if cl_metrics.first_non_finite_step is not None else -1
             )
+            core_metrics["fisher_source_mode"] = str(sleep_metrics["fisher_source_mode"])
             logger.log(core_metrics, step=step)
 
             if cfg.logging.checkpoint_interval > 0 and step % cfg.logging.checkpoint_interval == 0:

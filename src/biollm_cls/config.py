@@ -27,6 +27,8 @@ class ModelConfig:
     hf_attn_implementation: str | None = None
     hf_gradient_checkpointing: bool = False
     hf_local_files_only: bool = False
+    hf_injection_fraction: float = 0.7
+    hf_allow_legacy_injection_fallback: bool = True
 
 
 @dataclass
@@ -64,6 +66,8 @@ class ConsolidationConfig:
     max_sleep_steps: int
     pseudo_rehearsal: bool
     refresh: RefreshConfig
+    pseudo_ratio: float = 0.25
+    fisher_use_capability_mix: bool = True
 
 
 @dataclass

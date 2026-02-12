@@ -86,7 +86,13 @@ class HippocampalMoE(nn.Module):
         penalty = self.capacity_penalty * self.capacity_scores().unsqueeze(0)
         return base_logits + bonus - penalty
 
-    def _apply_topk(self, hidden: torch.Tensor, topk_idx: torch.Tensor, topk_probs: torch.Tensor) -> torch.Tensor:
+    def _apply_topk(
+        self,
+        hidden: torch.Tensor,
+        topk_idx: torch.Tensor,
+        topk_probs: torch.Tensor,
+        track_stats: bool,
+    ) -> torch.Tensor:
         bsz, _, hdim = hidden.shape
         delta = torch.zeros_like(hidden)
         out_dtype = hidden.dtype
@@ -96,19 +102,21 @@ class HippocampalMoE(nn.Module):
                 weight = topk_probs[b, j].to(out_dtype)
                 expert_out = self._apply_expert_casted(eid, hidden[b], out_dtype=out_dtype)
                 delta[b] = delta[b] + weight * expert_out
-                self.activation_counts[eid] += 1.0
+                if track_stats:
+                    self.activation_counts[eid] += 1.0
         assert delta.shape[-1] == hdim
         return delta
 
-    def forward(self, hidden: torch.Tensor) -> tuple[torch.Tensor, RoutingInfo]:
+    def forward(self, hidden: torch.Tensor, track_stats: bool = True) -> tuple[torch.Tensor, RoutingInfo]:
         pooled = hidden.mean(dim=1)
         effective_logits = self._effective_router_logits(pooled)
         router_probs = torch.softmax(effective_logits, dim=-1)
         topk_probs, topk_idx = torch.topk(router_probs, k=self.top_k, dim=-1)
         topk_probs = topk_probs / topk_probs.sum(dim=-1, keepdim=True).clamp_min(1e-8)
 
-        delta = self._apply_topk(hidden, topk_idx, topk_probs)
-        self.last_router_probs = router_probs.detach().mean(dim=0)
+        delta = self._apply_topk(hidden, topk_idx, topk_probs, track_stats=track_stats)
+        if track_stats:
+            self.last_router_probs = router_probs.detach().mean(dim=0)
         return delta, RoutingInfo(topk_indices=topk_idx, topk_probs=topk_probs, router_probs=router_probs)
 
     def apply_selected(

@@ -19,6 +19,8 @@ model:
   hf_attn_implementation: null
   hf_gradient_checkpointing: false
   hf_local_files_only: false
+  hf_injection_fraction: 0.7
+  hf_allow_legacy_injection_fallback: true
 benchmark:
   name: toy
   switch_every: 200
@@ -60,6 +62,8 @@ consolidation:
   min_sleep_steps: 25
   max_sleep_steps: 200
   pseudo_rehearsal: false
+  pseudo_ratio: 0.25
+  fisher_use_capability_mix: true
   refresh:
     kl_threshold: 0.05
     reset_factor: 0.1

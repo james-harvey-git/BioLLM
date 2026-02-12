@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+import numbers
 
 import torch
 
@@ -146,8 +147,19 @@ class MetricsLogger:
         except Exception as exc:
             self._append_warning(f"W&B watch failed: {exc}")
 
-    def log(self, metrics: dict[str, float], step: int) -> None:
-        payload = {"step": step, **{k: float(v) for k, v in metrics.items()}}
+    def log(self, metrics: dict[str, Any], step: int) -> None:
+        payload: dict[str, Any] = {"step": int(step)}
+        for key, value in metrics.items():
+            if isinstance(value, str):
+                payload[key] = value
+                continue
+            if isinstance(value, numbers.Real):
+                payload[key] = float(value)
+                continue
+            try:
+                payload[key] = float(value)
+            except Exception:
+                payload[key] = str(value)
         self._fp.write(json.dumps(payload) + "\n")
         self._fp.flush()
         if self._wandb is not None:

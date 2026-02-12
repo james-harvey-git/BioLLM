@@ -5,6 +5,8 @@ sleep_max_interval: 500
 min_sleep_steps: 25
 max_sleep_steps: 200
 pseudo_rehearsal: false
+pseudo_ratio: 0.25
+fisher_use_capability_mix: true
 refresh:
   kl_threshold: 0.05
   reset_factor: 0.1
